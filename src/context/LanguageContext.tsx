@@ -115,7 +115,7 @@ const translations: Record<Language, Record<string, string>> = {
     "gallery.g5.title": "Liposuction & BBL (Brazilian Butt Lift)",
     "gallery.g6.title": "Liposuction 360, BBL & Tummy Tuck (Abdominoplasty)",
     "gallery.g7.title": "Breast Reduction for Gigantomastia",
-    "gallery.g8.title": "Liposuction, BBL & Breast Lift with Implants",
+    "gallery.g8.title": "Liposuction, BBL & Breast Augmentation with Implants",
 
     // Testimonials Section
     "testimonials.subtitle": "What Our Patients Say",
@@ -127,11 +127,12 @@ const translations: Record<Language, Record<string, string>> = {
     "contact.heading": "Request Your Clinical Consultation",
     "contact.desc": "Take the first step toward a renewed profile. Complete our secure pre-consultation medical form, and our specialized surgical coordinator will contact you promptly.",
     "contact.visit_us": "Visit Our Offices",
-    "contact.visit_desc": "Centros Médicos Estrella, Santo Domingo, Dominican Republic",
+    "contact.visit_desc": "IPBMA Medical Associates, Av Independencia 655, Gazcue, Santo Domingo, Dominican Republic",
     "contact.bilingual": "Bilingual Coordination Office",
     "contact.bilingual_desc": "Available 24/7 for international and domestic patients.",
     "contact.evaluation_form": "MEDICAL EVALUATION FORM",
     "contact.female_patient": "FEMALE PATIENT",
+    "contact.male_patient": "MALE PATIENT",
     
     // Form Inputs
     "form.first_name": "First Name",
@@ -206,6 +207,10 @@ const translations: Record<Language, Record<string, string>> = {
     "procedure.liposuction": "Liposculpture (HD)",
     "procedure.abdominoplasty": "Abdominoplasty (Tummy Tuck)",
     "procedure.botox_fillers": "Injectables & Botox",
+    "procedure.thigh_lift": "Thigh Lift",
+    "procedure.thigh_liposuction": "Thigh Liposuction",
+    "procedure.arm_lift": "Arm Lift",
+    "procedure.arm_liposuction": "Arm Liposuction",
 
     // Specialists
     "specialist.dr_estrella.bio": "Dr. Victor Estrella is a highly recognized plastic surgeon in Santo Domingo, specializing in high-definition liposculpture, advanced abdominoplasty, breast surgery, and facial rejuvenation with a focus on harmony and natural-looking beauty.",
@@ -319,7 +324,7 @@ const translations: Record<Language, Record<string, string>> = {
     "gallery.g5.title": "Lipoescultura y BBL (Aumento de Glúteos)",
     "gallery.g6.title": "Lipoescultura 360, BBL y Abdominoplastia Avanzada",
     "gallery.g7.title": "Reducción de Senos por Gigantomastia",
-    "gallery.g8.title": "Lipoescultura, BBL, Levantamiento y Aumento de Senos",
+    "gallery.g8.title": "Lipoescultura, BBL y Aumento de Senos con Implantes",
 
     // Testimonials Section
     "testimonials.subtitle": "Lo Que Dicen Nuestros Pacientes",
@@ -331,11 +336,12 @@ const translations: Record<Language, Record<string, string>> = {
     "contact.heading": "Solicite una Consulta Clínica",
     "contact.desc": "Dé el primer paso hacia su nuevo perfil. Complete nuestro formulario médico seguro de preconsulta y nuestro coordinador quirúrgico lo contactará de inmediato.",
     "contact.visit_us": "Visite Nuestras Oficinas",
-    "contact.visit_desc": "Centros Médicos Estrella, Santo Domingo, República Dominicana",
+    "contact.visit_desc": "IPBMA Medical Associates, Av Independencia 655, Gazcue, Santo Domingo, República Dominicana",
     "contact.bilingual": "Coordinación Bilingüe 24/7",
     "contact.bilingual_desc": "Disponible de forma ininterrumpida para pacientes nacionales e internacionales.",
     "contact.evaluation_form": "FORMULARIO DE EVALUACIÓN MÉDICA",
     "contact.female_patient": "PACIENTE FEMENINA",
+    "contact.male_patient": "PACIENTE MASCULINO",
     
     // Form Inputs
     "form.first_name": "Nombre",
@@ -410,6 +416,10 @@ const translations: Record<Language, Record<string, string>> = {
     "procedure.liposuction": "Lipoescultura (HD)",
     "procedure.abdominoplasty": "Abdominoplastia",
     "procedure.botox_fillers": "Inyectables y Botox",
+    "procedure.thigh_lift": "Lifting de Muslos",
+    "procedure.thigh_liposuction": "Liposucción de Muslos",
+    "procedure.arm_lift": "Lifting de Brazos",
+    "procedure.arm_liposuction": "Liposucción de Brazos",
 
     "specialist.dr_estrella.bio": "El Dr. Victor Estrella es un cirujano plástico altamente reconocido en Santo Domingo, especializado en lipoescultura de alta definición, abdominoplastia avanzada, cirugía de mama y rejuvenecimiento facial enfocado en la armonía y la belleza natural.",
     "specialist.dr_sinclair.bio": "El Dr. Sinclair se especializa en rejuvenecimiento facial, contorno corporal de alta definición y estética mamaria avanzada, reconocido por su atención compasiva centrada en el paciente.",
@@ -534,9 +544,12 @@ const translations: Record<Language, Record<string, string>> = {
     "contact.heading": "Demander une Consultation Clinique",
     "contact.desc": "Faites le premier pas vers un profil renouvelé. Remplissez notre formulaire pré-consultation sécurisé, et notre coordinateur vous contactera rapidement.",
     "contact.visit_us": "Visiter Nos Bureaux",
-    "contact.visit_desc": "Centres Médicaux Estrella, Saint-Domingue, République Dominicaine",
+    "contact.visit_desc": "IPBMA Medical Associates, Av Independencia 655, Gazcue, Santo Domingo, République Dominicaine",
     "contact.bilingual": "Bureau de Coordination Bilingue",
     "contact.bilingual_desc": "Disponible 24h/24, 7j/7 pour les patients locaux et internationaux.",
+    "contact.evaluation_form": "FORMULAIRE D'ÉVALUATION MÉDICALE",
+    "contact.female_patient": "PATIENTE FÉMININE",
+    "contact.male_patient": "PATIENT MASCULIN",
     
     // Form Inputs
     "form.first_name": "Prénom",
@@ -602,6 +615,10 @@ const translations: Record<Language, Record<string, string>> = {
     "procedure.liposuction": "Liposculpture (HD)",
     "procedure.abdominoplasty": "Abdominoplastie",
     "procedure.botox_fillers": "Injections & Botox",
+    "procedure.thigh_lift": "Lifting des Cuisses",
+    "procedure.thigh_liposuction": "Liposuccion des Cuisses",
+    "procedure.arm_lift": "Lifting des Bras",
+    "procedure.arm_liposuction": "Liposuccion des Bras",
 
     "specialist.dr_estrella.bio": "Le Dr Victor Estrella est un chirurgien esthétique hautement reconnu à Saint-Domingue, spécialisé en liposculpture haute définition, abdominoplastie avancée, chirurgie mammaire et rajeunissement facial, avec un accent particulier sur l'harmonie et la beauté naturelle.",
     "specialist.dr_sinclair.bio": "Le Dr Sinclair est spécialisé en rajeunissement facial, remodelage corporel haute définition et esthétique mammaire avancée, réputé pour son approche chaleureuse et attentionnée.",
@@ -726,9 +743,12 @@ const translations: Record<Language, Record<string, string>> = {
     "contact.heading": "Solicite uma Consulta Clínica",
     "contact.desc": "Dê o primeiro passo rumo ao seu novo perfil. Preencha nosso formulário de pré-consulta seguro e nosso coordenador cirúrgico entrará em contato prontamente.",
     "contact.visit_us": "Visite Nossos Consultórios",
-    "contact.visit_desc": "Centros Médicos Estrella, Santo Domingo, República Dominicana",
+    "contact.visit_desc": "IPBMA Medical Associates, Av Independencia 655, Gazcue, Santo Domingo, República Dominicana",
     "contact.bilingual": "Coordenação Bilíngue 24/7",
     "contact.bilingual_desc": "Disponível ininterruptamente para pacientes nacionais e internacionais.",
+    "contact.evaluation_form": "FORMULÁRIO DE AVALIAÇÃO MÉDICA",
+    "contact.female_patient": "PACIENTE FEMENINA",
+    "contact.male_patient": "PACIENTE MASCULINO",
     
     // Form Inputs
     "form.first_name": "Nome",
@@ -794,6 +814,10 @@ const translations: Record<Language, Record<string, string>> = {
     "procedure.liposuction": "Lipoaspiração (HD)",
     "procedure.abdominoplasty": "Abdominoplastia",
     "procedure.botox_fillers": "Injetáveis e Botox",
+    "procedure.thigh_lift": "Lifting de Coxas",
+    "procedure.thigh_liposuction": "Lipoaspiração de Coxas",
+    "procedure.arm_lift": "Lifting de Braços",
+    "procedure.arm_liposuction": "Lipoaspiração de Braços",
 
     "specialist.dr_estrella.bio": "O Dr. Victor Estrella é um cirurgião plástico altamente reconhecido em Santo Domingo, especializado em lipoaspiração de alta definição, abdominoplastia avançada, cirurgia de mama e rejuvenescimento facial focado em harmonia e beleza natural.",
     "specialist.dr_sinclair.bio": "O Dr. Sinclair é especialista em rejuvenescimento facial, contorno corporal de alta definição e estética mamária avançada, reconhecido por seu atendimento humano e atencioso.",
@@ -918,9 +942,12 @@ const translations: Record<Language, Record<string, string>> = {
     "contact.heading": "Klinisches Beratungsgespräch Anfordern",
     "contact.desc": "Machen Sie den ersten Schritt. Füllen Sie unser sicheres Vorbereitungsformular aus, und unser chirurgischer Koordinator wird Sie zeitnah kontaktieren.",
     "contact.visit_us": "Besuchen Sie Uns",
-    "contact.visit_desc": "Centros Médicos Estrella, Santo Domingo, Dominikanische Republik",
+    "contact.visit_desc": "IPBMA Medical Associates, Av Independencia 655, Gazcue, Santo Domingo, Dominikanische Republik",
     "contact.bilingual": "Zweisprachige Koordinationsstelle",
     "contact.bilingual_desc": "Rund um die Uhr für in- und ausländische Patienten erreichbar.",
+    "contact.evaluation_form": "MEDIZINISCHES BEWERTUNGSFORMULAR",
+    "contact.female_patient": "WEIBLICHE PATIENTIN",
+    "contact.male_patient": "MÄNNLICHER PATIENT",
     
     // Form Inputs
     "form.first_name": "Vorname",
@@ -986,6 +1013,10 @@ const translations: Record<Language, Record<string, string>> = {
     "procedure.liposuction": "Fettabsaugung (HD)",
     "procedure.abdominoplasty": "Bauchdeckenstraffung",
     "procedure.botox_fillers": "Filler & Botox",
+    "procedure.thigh_lift": "Oberschenkelstraffung",
+    "procedure.thigh_liposuction": "Oberschenkel-Liposuktion",
+    "procedure.arm_lift": "Oberarmstraffung",
+    "procedure.arm_liposuction": "Oberarm-Liposuktion",
 
     "specialist.dr_estrella.bio": "Dr. Victor Estrella ist ein hochangesehener plastischer Chirurg in Santo Domingo, spezialisiert auf hochauflösende Liposuktion, fortschrittliche Abdominoplastik, Brustchirurgie und Gesichtsverjüngung mit Fokus auf Harmonie und natürliche Schönheit.",
     "specialist.dr_sinclair.bio": "Dr. Sinclair ist spezialisiert auf Gesichtsverjüngung, hochauflösendes Body-Contouring und fortschrittliche Brustästhetik, bekannt für seine einfühlsame, patientenorientierte Betreuung.",

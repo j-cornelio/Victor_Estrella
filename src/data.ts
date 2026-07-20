@@ -21,7 +21,7 @@ export const SERVICES = [
     id: 'body',
     title: 'Body',
     description: 'Contour and sculpt your silhouette with transformative surgical and non-invasive body-shaping treatments.',
-    procedures: ['Tummy Tuck (Abdominoplasty)', 'Liposuction (Lipo 360)', 'Mommy Makeover', 'Body Lift', 'Thigh & Arm Lift'],
+    procedures: ['Tummy Tuck (Abdominoplasty)', 'Liposuction (Lipo 360)', 'Body Lift', 'Thigh Lift', 'Thigh Liposuction', 'Arm Lift', 'Arm Liposuction'],
     image: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=600',
     details: 'Designed to target stubborn fat deposits, remove excess skin, and tighten underlying abdominal walls. Our body treatments restore definition and contour to enhance your personal silhouette.'
   },
@@ -193,7 +193,7 @@ export const GALLERY_ITEMS: GalleryItem[] = [
   },
   {
     id: 'g8',
-    title: 'Liposuction, BBL & Breast Lift with Implants',
+    title: 'Liposuction, BBL & Breast Augmentation with Implants',
     before: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784321692/Liposuction-BBL-Breast-lift-augmentation-implants-before_peva9k.png',
     after: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784321692/Liposuction-BBL-Breast-lift-augmentation-implants-after_nazaor.png',
     category: 'Breast Aesthetics',

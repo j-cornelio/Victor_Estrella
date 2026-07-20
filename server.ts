@@ -387,7 +387,8 @@ Content Preview: Dear ${firstName}, thank you for your request for the "${proced
         lifestyle = {},
         gyneco = {},
         photos = {},
-        lang = "en"
+        lang = "en",
+        gender = "female"
       } = req.body;
 
       const patientName = personal.fullName || "Unnamed Patient";
@@ -707,6 +708,7 @@ Content Preview: Dear ${firstName}, thank you for your request for the "${proced
           </div>
 
           <!-- Section 7: Gynecological History -->
+          ${gender !== "male" ? `
           <div style="margin-bottom: 24px;">
             <h3 style="font-size: 14px; text-transform: uppercase; letter-spacing: 1.5px; color: #0373bb; border-bottom: 1px solid #EBE6DF; padding-bottom: 6px; margin-bottom: 12px; font-weight: bold;">7. Gynecological Metrics</h3>
             <table style="width: 100%; font-size: 13px; color: #5C4D44; border-collapse: collapse; line-height: 1.6;">
@@ -740,6 +742,7 @@ Content Preview: Dear ${firstName}, thank you for your request for the "${proced
               </tr>
             </table>
           </div>
+          ` : ""}
 
           <!-- Section 8: Photographic Case File -->
           <div style="margin-bottom: 12px;">

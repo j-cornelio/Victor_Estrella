@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { SPECIALISTS, SERVICES } from '../data';
 import { Consultation } from '../types';
-import { MapPin, Phone, Mail, Calendar, CheckCircle, FileText } from 'lucide-react';
+import { MapPin, Phone, Mail, Calendar, CheckCircle, FileText, ClipboardCheck } from 'lucide-react';
 import FemaleEvaluationModal from './FemaleEvaluationModal';
+import MaleEvaluationModal from './MaleEvaluationModal';
 import { initCalendarAuth, googleSignInForCalendar, calendarSignOut, createCalendarEvent } from '../lib/googleCalendar';
 
 interface ContactSectionProps {
@@ -42,6 +43,7 @@ export default function ContactSection({
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [isEvaluationOpen, setIsEvaluationOpen] = useState(false);
+  const [isMaleEvaluationOpen, setIsMaleEvaluationOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailDispatched, setEmailDispatched] = useState(false);
 
@@ -312,31 +314,38 @@ export default function ContactSection({
               </div>
 
               {/* Medical Evaluation Form */}
-              <div className="flex items-start space-x-4 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setIsEvaluationOpen(true)}
-                  className="p-3 bg-white border border-[#EBE6DF] hover:border-[#0373bb]/50 rounded-xl text-[#0373bb] shadow-xs hover:shadow-sm hover:bg-neutral-50 transition-all flex items-center justify-center cursor-pointer shrink-0"
-                  aria-label="Open Medical Evaluation Form"
-                >
-                  <FileText className="w-5 h-5" />
-                </button>
-                <div className="text-left">
-                  <button
-                    type="button"
-                    onClick={() => setIsEvaluationOpen(true)}
-                    className="font-sans text-sm font-bold text-[#2D211A] hover:text-[#0373bb] uppercase tracking-wide text-left block focus:outline-none cursor-pointer"
-                  >
+              <div className="flex items-start space-x-4 pt-2 border-t border-[#EBE6DF]/40">
+                <div className="p-3 bg-white border border-[#EBE6DF] rounded-xl text-[#0373bb] shadow-xs shrink-0">
+                  <ClipboardCheck className="w-5 h-5" />
+                </div>
+                <div className="text-left flex-1">
+                  <h4 className="font-sans text-sm font-bold text-[#2D211A] uppercase tracking-wide">
                     {t('contact.evaluation_form')}
-                  </button>
-                  <span className="text-xs text-[#0373bb] font-semibold mt-1 bg-[#0373bb]/5 px-2 py-0.5 rounded-sm inline-block tracking-wider">
-                    {t('contact.female_patient')}
-                  </span>
-                  <p className="text-[11px] sm:text-xs text-[#7C6C63] mt-1 leading-relaxed">
+                  </h4>
+                  <p className="text-[11px] sm:text-xs text-[#7C6C63] mt-1 leading-relaxed mb-3">
                     {language === 'es'
-                      ? 'Complete su pre-evaluación clínica de forma interactiva para agilizar su cita.'
-                      : 'Interactive digital clinical pre-assessment to expedite your consultation process.'}
+                      ? 'Complete su pre-evaluación clínica segura para agilizar su consulta con el Dr. Estrella.'
+                      : 'Complete your secure clinical pre-assessment to expedite your consultation with Dr. Estrella.'}
                   </p>
+                  
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <button
+                      type="button"
+                      onClick={() => setIsEvaluationOpen(true)}
+                      className="px-4 py-2 border border-[#EBE6DF] hover:border-[#0373bb] text-neutral-800 hover:text-[#0373bb] hover:bg-[#0373bb]/5 rounded-xl font-sans text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+                      {t('contact.female_patient')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsMaleEvaluationOpen(true)}
+                      className="px-4 py-2 border border-[#EBE6DF] hover:border-[#0373bb] text-neutral-800 hover:text-[#0373bb] hover:bg-[#0373bb]/5 rounded-xl font-sans text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1"
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#0373bb]" />
+                      {t('contact.male_patient')}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
@@ -630,6 +639,10 @@ export default function ContactSection({
       <FemaleEvaluationModal
         isOpen={isEvaluationOpen}
         onClose={() => setIsEvaluationOpen(false)}
+      />
+      <MaleEvaluationModal
+        isOpen={isMaleEvaluationOpen}
+        onClose={() => setIsMaleEvaluationOpen(false)}
       />
     </section>
   );

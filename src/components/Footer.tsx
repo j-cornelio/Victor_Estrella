@@ -26,7 +26,7 @@ export default function Footer({ onNavToSection }: FooterProps) {
               <div>
                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Main Clinical Office</p>
                 <p className="text-xs sm:text-sm text-[#5C4D44] mt-1">
-                  Av. Independencia 655, Santo Domingo 10205, Dominican Republic
+                  IPBMA Medical Associates, Av Independencia 655, Gazcue, Santo Domingo, Dominican Republic
                 </p>
               </div>
               <div>

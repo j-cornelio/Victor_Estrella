@@ -15,8 +15,8 @@ export default function AboutSection() {
     {
       icon: <Award className="w-5 h-5 text-cyan-500" />,
       title: t('about.cred.2.title'),
-      description: t('about.cred.2.desc'),
-      description2: t('about.cred.2.desc_extra')
+      description: t('about.cred.2.desc_extra'),
+      description2: t('about.cred.2.desc')
     },
     {
       icon: <ShieldCheck className="w-5 h-5 text-cyan-500" />,
@@ -144,6 +144,11 @@ export default function AboutSection() {
                 {cred.description2 && (
                   <p className="text-xs text-[#7C6C63] leading-relaxed mt-2">
                     {cred.description2}
+                  </p>
+                )}
+                {idx === 1 && (
+                  <p className="text-xs text-[#7C6C63] leading-relaxed mt-2">
+                    Sodocipre
                   </p>
                 )}
               </div>
