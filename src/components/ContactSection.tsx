@@ -263,7 +263,7 @@ export default function ContactSection({
   const allProcedures = SERVICES.flatMap(s => s.procedures);
 
   return (
-    <section id="contact" className="py-20 bg-gradient-to-b from-neutral-50 to-[#FCFBF9] scroll-mt-20">
+    <section id="contact" className="py-20 bg-[#b8e1ef] scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           

@@ -16,7 +16,7 @@ export default function TestimonialsSection() {
   };
 
   return (
-    <section id="testimonials" className="py-20 bg-neutral-50 scroll-mt-20">
+    <section id="testimonials" className="py-20 bg-[#b8e1ef] scroll-mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Section Header */}
