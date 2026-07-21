@@ -4,12 +4,16 @@ import { createServer as createViteServer } from "vite";
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = typeof process.env.PORT === "string" ? parseInt(process.env.PORT, 10) : 3000;
 
-  app.get("/", (_req, res) => res.send("Server is running"));
-  app.get("/health", (_req, res) => res.json({ ok: true }));
-  app.get("/api", (_req, res) => res.json({ ok: true }));
-  
+  // Health check and api endpoints for hosting/deployment verification
+  app.get("/health", (_req, res) => {
+    res.json({ ok: true, status: "healthy" });
+  });
+  app.get("/api", (_req, res) => {
+    res.json({ ok: true, version: "1.0.0" });
+  });
+
   // Body parser middleware
   app.use(express.json());
 
