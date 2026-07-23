@@ -5,6 +5,7 @@ import { Consultation } from '../types';
 import { MapPin, Phone, Mail, Calendar, CheckCircle, FileText, ClipboardCheck } from 'lucide-react';
 import FemaleEvaluationModal from './FemaleEvaluationModal';
 import MaleEvaluationModal from './MaleEvaluationModal';
+import AddToCalendarButton from './AddToCalendarButton';
 import { initCalendarAuth, googleSignInForCalendar, calendarSignOut, createCalendarEvent } from '../lib/googleCalendar';
 
 interface ContactSectionProps {
@@ -46,6 +47,7 @@ export default function ContactSection({
   const [isMaleEvaluationOpen, setIsMaleEvaluationOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [emailDispatched, setEmailDispatched] = useState(false);
+  const [lastSubmitted, setLastSubmitted] = useState<{ procedure: string; date: string; time: string; firstName: string; lastName: string } | null>(null);
 
   // Google Calendar integration states
   const [calendarUser, setCalendarUser] = useState<any>(null);
@@ -74,9 +76,18 @@ export default function ContactSection({
       if (res) {
         setCalendarUser(res.user);
         setSaveToGoogleCalendar(true);
+      } else {
+        setSaveToGoogleCalendar(false);
       }
-    } catch (err) {
-      console.error('Google Calendar login error:', err);
+    } catch (err: any) {
+      if (
+        err?.code !== 'auth/popup-closed-by-user' &&
+        err?.code !== 'auth/cancelled-popup-request' &&
+        err?.code !== 'auth/popup-blocked'
+      ) {
+        console.error('Google Calendar login error:', err);
+      }
+      setSaveToGoogleCalendar(false);
     }
   };
 
@@ -129,6 +140,15 @@ export default function ContactSection({
       setIsSubmitting(false);
       return;
     }
+
+    // Record submitted data for AddToCalendar button
+    setLastSubmitted({
+      procedure: formData.procedure,
+      date: formData.date,
+      time: formData.time,
+      firstName: formData.firstName,
+      lastName: formData.lastName
+    });
 
     // Google Calendar Event Integration (Triggered before form clear)
     let addedToCalendar = false;
@@ -332,7 +352,7 @@ export default function ContactSection({
                     <button
                       type="button"
                       onClick={() => setIsEvaluationOpen(true)}
-                      className="px-4 py-2 border border-[#EBE6DF] hover:border-[#0373bb] text-neutral-800 hover:text-[#0373bb] hover:bg-[#0373bb]/5 rounded-xl font-sans text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1"
+                      className="px-4 py-2 bg-neutral-100 hover:bg-white border border-[#EBE6DF] hover:border-[#0373bb] text-neutral-800 hover:text-[#0373bb] rounded-xl font-sans text-xs font-bold uppercase tracking-wider shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
                       {t('contact.female_patient')}
@@ -340,7 +360,7 @@ export default function ContactSection({
                     <button
                       type="button"
                       onClick={() => setIsMaleEvaluationOpen(true)}
-                      className="px-4 py-2 border border-[#EBE6DF] hover:border-[#0373bb] text-neutral-800 hover:text-[#0373bb] hover:bg-[#0373bb]/5 rounded-xl font-sans text-xs font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1"
+                      className="px-4 py-2 bg-neutral-100 hover:bg-white border border-[#EBE6DF] hover:border-[#0373bb] text-neutral-800 hover:text-[#0373bb] rounded-xl font-sans text-xs font-bold uppercase tracking-wider shadow-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 flex-1"
                     >
                       <span className="w-1.5 h-1.5 rounded-full bg-[#0373bb]" />
                       {t('contact.male_patient')}
@@ -390,6 +410,18 @@ export default function ContactSection({
                           ? '¡Cita añadida a su Google Calendar!'
                           : 'Appointment added to your Google Calendar!'}
                       </span>
+                    </div>
+                  )}
+
+                  {lastSubmitted && (
+                    <div className="pt-2 flex justify-center">
+                      <AddToCalendarButton
+                        procedure={lastSubmitted.procedure}
+                        date={lastSubmitted.date}
+                        time={lastSubmitted.time}
+                        patientName={`${lastSubmitted.firstName} ${lastSubmitted.lastName}`}
+                        variant="secondary"
+                      />
                     </div>
                   )}
                   <button

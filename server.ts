@@ -58,6 +58,62 @@ async function startServer() {
         ? `Confirmación de Solicitud de Consulta - Dr. Victor Estrella`
         : `Consultation Request Received - Dr. Victor Estrella`;
 
+      // Build Calendar link & ICS invite attachment for email
+      const calTitle = encodeURIComponent(`Consultation: ${procedure} - Dr. Victor Estrella`);
+      const calDetails = encodeURIComponent(`Medical consultation with Dr. Victor Estrella for ${procedure}.\nPatient: ${firstName} ${lastName}\nPhone: ${phone}`);
+      const calLoc = encodeURIComponent('Dr. Victor Estrella Clinic, Santo Domingo, Dominican Republic');
+      const cleanDate = (date || '').replace(/-/g, '');
+      const calDates = `${cleanDate}T130000/${cleanDate}T140000`;
+      const googleCalEmailUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${calTitle}&details=${calDetails}&location=${calLoc}&dates=${calDates}`;
+
+      // Build ICS calendar invite attachment for automatic calendar sync
+      const buildIcsAttachment = () => {
+        try {
+          const parts = (date || '').split('-');
+          const y = parts[0] || '2026';
+          const m = parts[1] || '01';
+          const d = parts[2] || '01';
+          const dtStart = `${y}${m}${d}T130000Z`;
+          const dtEnd = `${y}${m}${d}T140000Z`;
+          const dtStamp = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
+          const icsString = [
+            'BEGIN:VCALENDAR',
+            'VERSION:2.0',
+            'PRODID:-//Dr. Victor Estrella Clinic//Consultation Booking//EN',
+            'CALSCALE:GREGORIAN',
+            'METHOD:REQUEST',
+            'BEGIN:VEVENT',
+            `UID:consultation-${Date.now()}@drestrellaplasticsurgeon.com`,
+            `DTSTAMP:${dtStamp}`,
+            `DTSTART:${dtStart}`,
+            `DTEND:${dtEnd}`,
+            `SUMMARY:Cita Médica: ${procedure} - ${firstName} ${lastName}`,
+            `DESCRIPTION:Paciente: ${firstName} ${lastName}\\nTeléfono: ${phone}\\nCorreo: ${email}\\nProcedimiento: ${procedure}\\nNotas: ${notes || 'N/A'}`,
+            `LOCATION:Dr. Victor Estrella Clinic, Santo Domingo, Dominican Republic`,
+            'STATUS:CONFIRMED',
+            'ORGANIZER;CN="Dr. Victor Estrella Clinic":mailto:appointments@contact.drestrellaplasticsurgeon.com',
+            'BEGIN:VALARM',
+            'TRIGGER:-PT24H',
+            'ACTION:DISPLAY',
+            `DESCRIPTION:Recordatorio de Cita: ${procedure}`,
+            'END:VALARM',
+            'END:VEVENT',
+            'END:VCALENDAR'
+          ].join('\r\n');
+
+          return [{
+            filename: 'cita_dr_victor_estrella.ics',
+            content: Buffer.from(icsString).toString('base64'),
+            content_type: 'text/calendar'
+          }];
+        } catch (e) {
+          return [];
+        }
+      };
+
+      const emailAttachments = buildIcsAttachment();
+
       // Build English HTML email
       const htmlEnglish = `
         <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #2D211A; background-color: #FCFBF9; border: 1px solid #EBE6DF; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
@@ -95,6 +151,9 @@ async function startServer() {
                 <td style="padding: 8px 0; font-style: italic; color: #7C6C63;">"${notes}"</td>
               </tr>` : ""}
             </table>
+            <div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #EBE6DF;">
+              <a href="${googleCalEmailUrl}" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #0373bb; color: #ffffff; text-decoration: none; border-radius: 24px; font-weight: bold; font-size: 12px; font-family: Arial, sans-serif;">📅 Add to Google Calendar</a>
+            </div>
           </div>
 
           <p style="font-size: 13.5px; line-height: 1.6; color: #5C4D44;"><strong>What happens next?</strong></p>
@@ -151,6 +210,9 @@ async function startServer() {
                 <td style="padding: 8px 0; font-style: italic; color: #7C6C63;">"${notes}"</td>
               </tr>` : ""}
             </table>
+            <div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #EBE6DF;">
+              <a href="${googleCalEmailUrl}" target="_blank" style="display: inline-block; padding: 10px 20px; background-color: #0373bb; color: #ffffff; text-decoration: none; border-radius: 24px; font-weight: bold; font-size: 12px; font-family: Arial, sans-serif;">📅 Agregar a Google Calendar</a>
+            </div>
           </div>
 
           <p style="font-size: 13.5px; line-height: 1.6; color: #5C4D44;"><strong>¿Qué sucederá a continuación?</strong></p>
@@ -189,7 +251,8 @@ async function startServer() {
               from: `Dr. Victor Estrella Clinic <${fromEmail}>`,
               to: [email],
               subject: patientSubject,
-              html: activeHtml
+              html: activeHtml,
+              attachments: emailAttachments
             })
           });
 
@@ -324,7 +387,8 @@ async function startServer() {
               from: `Clinical Board Alert <${fromEmail}>`,
               to: [configuredSender], // Sends a direct lead notification copy to the clinic admin/sender
               subject: adminSubject,
-              html: adminHtml
+              html: adminHtml,
+              attachments: emailAttachments
             })
           });
 

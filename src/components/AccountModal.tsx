@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { Consultation, Order } from '../types';
 import { X, User, Calendar, ShoppingBag, CreditCard, LogIn, Lock, Check, LogOut } from 'lucide-react';
+import AddToCalendarButton from './AddToCalendarButton';
 
 interface AccountModalProps {
   isOpen: boolean;
@@ -122,14 +123,25 @@ export default function AccountModal({
                   ) : (
                     <div className="space-y-3 max-h-48 overflow-y-auto pr-1">
                       {consultations.map((c) => (
-                        <div key={c.id} className="p-3 bg-neutral-50 rounded-xl border border-neutral-200/40 text-xs flex justify-between items-center">
-                          <div className="space-y-1">
-                            <p className="font-bold text-[#2D211A]">{c.procedure}</p>
-                            <p className="text-[10px] text-neutral-400">{c.date} at {c.time}</p>
+                        <div key={c.id} className="p-3 bg-neutral-50 rounded-xl border border-neutral-200/40 text-xs space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="space-y-0.5">
+                              <p className="font-bold text-[#2D211A]">{c.procedure}</p>
+                              <p className="text-[10px] text-neutral-400">{c.date} at {c.time}</p>
+                            </div>
+                            <span className="text-[9px] bg-[#F2FBFB] text-[#0373bb] border border-cyan-100 font-bold px-2 py-0.5 rounded-full uppercase">
+                              {c.status}
+                            </span>
                           </div>
-                          <span className="text-[9px] bg-[#F2FBFB] text-[#0373bb] border border-cyan-100 font-bold px-2 py-0.5 rounded-full uppercase">
-                            {c.status}
-                          </span>
+                          <div className="pt-1 border-t border-neutral-200/40 flex justify-end">
+                            <AddToCalendarButton
+                              procedure={c.procedure}
+                              date={c.date}
+                              time={c.time}
+                              patientName={`${c.firstName} ${c.lastName}`}
+                              variant="compact"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>

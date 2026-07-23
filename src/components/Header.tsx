@@ -70,11 +70,19 @@ export default function Header({
 
           {/* Phone Number */}
           <a
-            href="tel:3472783792"
+            href="https://wa.me/18299358121"
+            target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center space-x-2.5 px-5 py-2.5 rounded-full border border-white/20 hover:border-cyan-300 text-white font-sans text-sm font-medium transition-all group"
           >
-            <Phone className="w-4 h-4 text-cyan-300 group-hover:scale-110 transition-transform" />
-            <span className="tracking-wide">347 278 3792</span>
+            <svg 
+              viewBox="0 0 24 24" 
+              fill="currentColor" 
+              className="w-4 h-4 text-cyan-300 group-hover:scale-110 transition-transform"
+            >
+              <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.717-1.456L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.863-9.83.001-2.624-1.013-5.091-2.856-6.937C16.638 1.993 14.167.98 11.55.979c-5.444 0-9.87 4.414-9.873 9.833 0 1.696.442 3.35 1.28 4.811L1.87 20.3l4.777-1.146zm11.233-5.465c-.29-.145-1.716-.848-1.982-.944-.265-.096-.459-.145-.652.146-.192.29-.747.944-.916 1.137-.168.193-.337.217-.627.072-2.946-1.48-4.032-2.313-5.556-4.928-.4-.69.4-.64 1.144-2.128.12-.24.06-.452-.03-.597-.09-.145-.652-1.572-.894-2.152-.236-.569-.475-.491-.652-.5h-.556c-.192 0-.506.072-.77.361-.266.29-1.013.99-1.013 2.414 0 1.424 1.037 2.801 1.182 2.994.145.193 2.04 3.115 4.94 4.373.69.299 1.228.479 1.648.612.693.221 1.324.19 1.822.115.556-.084 1.716-.7 1.957-1.378.24-.677.24-1.258.169-1.377-.071-.12-.264-.192-.555-.337z"/>
+            </svg>
+            <span className="tracking-wide">(829)935-8121</span>
           </a>
 
           {/* Schedule Consultation Button */}
@@ -89,17 +97,17 @@ export default function Header({
 
           {/* Account Portal */}
           <button
-            onClick={onOpenAccount}
+            disabled
             id="header-account-btn"
-            className="flex items-center space-x-1.5 p-2 px-3 rounded-full hover:bg-white/10 text-white/90 hover:text-cyan-300 transition-colors cursor-pointer"
+            className="flex items-center space-x-1.5 p-2 px-3 rounded-full opacity-40 cursor-not-allowed text-white/60"
           >
             <User className="w-5 h-5" />
             {currentUser ? (
-              <span className="text-xs font-semibold text-cyan-200 max-w-[80px] truncate">
+              <span className="text-xs font-semibold max-w-[80px] truncate">
                 {currentUser.name.split(' ')[0]}
               </span>
             ) : (
-              <span className="text-xs font-medium text-white/90">{t('nav.portal')}</span>
+              <span className="text-xs font-medium">{t('nav.portal')}</span>
             )}
           </button>
         </div>
@@ -111,9 +119,9 @@ export default function Header({
 
           {/* Mobile Account */}
           <button
-            onClick={onOpenAccount}
+            disabled
             id="mobile-account-btn"
-            className="p-2 text-white/90 hover:text-cyan-300"
+            className="p-2 text-white/40 cursor-not-allowed"
             aria-label="My Account"
           >
             <User className="w-5.5 h-5.5" />
@@ -245,11 +253,19 @@ export default function Header({
           <div className="pt-4 border-t border-white/10 space-y-3">
             {/* Mobile Contact Button */}
             <a
-              href="tel:3472783792"
+              href="https://wa.me/18299358121"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex items-center justify-center space-x-2 w-full py-3 rounded-full border border-white/20 text-white font-sans text-sm font-medium"
             >
-              <Phone className="w-4 h-4 text-cyan-300" />
-              <span>347 278 3792</span>
+              <svg 
+                viewBox="0 0 24 24" 
+                fill="currentColor" 
+                className="w-4 h-4 text-cyan-300"
+              >
+                <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946C.06 5.348 5.397.01 12.008.01c3.202.001 6.212 1.246 8.477 3.513 2.262 2.268 3.507 5.28 3.505 8.484-.004 6.657-5.34 11.997-11.953 11.997-2.005-.001-3.973-.502-5.717-1.456L0 24zm6.59-4.846c1.6.95 3.188 1.449 4.825 1.451 5.436 0 9.86-4.413 9.863-9.83.001-2.624-1.013-5.091-2.856-6.937C16.638 1.993 14.167.98 11.55.979c-5.444 0-9.87 4.414-9.873 9.833 0 1.696.442 3.35 1.28 4.811L1.87 20.3l4.777-1.146zm11.233-5.465c-.29-.145-1.716-.848-1.982-.944-.265-.096-.459-.145-.652.146-.192.29-.747.944-.916 1.137-.168.193-.337.217-.627.072-2.946-1.48-4.032-2.313-5.556-4.928-.4-.69.4-.64 1.144-2.128.12-.24.06-.452-.03-.597-.09-.145-.652-1.572-.894-2.152-.236-.569-.475-.491-.652-.5h-.556c-.192 0-.506.072-.77.361-.266.29-1.013.99-1.013 2.414 0 1.424 1.037 2.801 1.182 2.994.145.193 2.04 3.115 4.94 4.373.69.299 1.228.479 1.648.612.693.221 1.324.19 1.822.115.556-.084 1.716-.7 1.957-1.378.24-.677.24-1.258.169-1.377-.071-.12-.264-.192-.555-.337z"/>
+              </svg>
+              <span>(829)935-8121</span>
             </a>
 
             {/* Mobile Book Button */}

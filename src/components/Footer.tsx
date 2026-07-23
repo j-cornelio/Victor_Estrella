@@ -31,8 +31,13 @@ export default function Footer({ onNavToSection }: FooterProps) {
               </div>
               <div>
                 <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Phone Lines</p>
-                <a href="tel:3472783792" className="text-sm font-bold text-[#2D211A] hover:text-[#0373bb] transition-colors mt-1 block">
-                  347 278 3792
+                <a 
+                  href="https://wa.me/18299358121" 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-sm font-bold text-[#2D211A] hover:text-[#0373bb] transition-colors mt-1 block"
+                >
+                  (829)935-8121
                 </a>
                 <p className="text-[9px] text-neutral-400 font-semibold uppercase mt-0.5">Contact us today to schedule your appointment</p>
               </div>

@@ -43,7 +43,15 @@ export const googleSignInForCalendar = async (): Promise<{ user: User; accessTok
     }
     cachedAccessToken = credential.accessToken;
     return { user: result.user, accessToken: cachedAccessToken };
-  } catch (err) {
+  } catch (err: any) {
+    if (
+      err?.code === 'auth/popup-closed-by-user' ||
+      err?.code === 'auth/cancelled-popup-request' ||
+      err?.code === 'auth/popup-blocked'
+    ) {
+      console.info('Google Auth popup closed or cancelled by user.');
+      return null;
+    }
     console.error('Google Auth Calendar sign-in failed:', err);
     throw err;
   } finally {

@@ -21,7 +21,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.portal": "Portal",
     "nav.aesthetics": "Aesthetics",
     "general.consultation": "Schedule a Consultation",
-    "general.phone": "347 278 3792",
+    "general.phone": "(829)935-8121",
 
     // Hero
     "hero.renew": "Renew Yourself",
@@ -230,7 +230,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.portal": "Portal",
     "nav.aesthetics": "Estética",
     "general.consultation": "Programar Consulta",
-    "general.phone": "347 278 3792",
+    "general.phone": "(829)935-8121",
 
     // Hero
     "hero.renew": "Renuévate",
@@ -438,7 +438,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.portal": "Portail",
     "nav.aesthetics": "Esthétique",
     "general.consultation": "Prendre un Rendez-vous",
-    "general.phone": "347 278 3792",
+    "general.phone": "(829)935-8121",
 
     // Hero
     "hero.renew": "Renouvelez-vous",
@@ -637,7 +637,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.portal": "Portal",
     "nav.aesthetics": "Estética",
     "general.consultation": "Agendar Consulta",
-    "general.phone": "347 278 3792",
+    "general.phone": "(829)935-8121",
 
     // Hero
     "hero.renew": "Renove-se",
@@ -836,7 +836,7 @@ const translations: Record<Language, Record<string, string>> = {
     "nav.portal": "Portal",
     "nav.aesthetics": "Ästhetik",
     "general.consultation": "Beratung Buchen",
-    "general.phone": "347 278 3792",
+    "general.phone": "(829)935-8121",
 
     // Hero
     "hero.renew": "Erneuere Dich",

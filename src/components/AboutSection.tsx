@@ -147,7 +147,7 @@ export default function AboutSection() {
                   </p>
                 )}
                 {idx === 1 && (
-                  <p className="text-xs text-[#7C6C63] leading-relaxed mt-2">
+                  <p className="text-xs text-[#7C6C63] leading-relaxed mt-2 uppercase tracking-wider font-semibold">
                     Sodocipre
                   </p>
                 )}
