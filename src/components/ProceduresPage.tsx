@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { PROCEDURES_DATA, ProcedureDetail } from '../data/proceduresData';
+import { useProcedureMetadata } from '../hooks/useProcedureMetadata';
 import { 
   ArrowLeft, Search, Clock, ShieldCheck, Heart, 
   HelpCircle, Calendar, Sparkles, Check, 
@@ -27,6 +28,10 @@ export default function ProceduresPage({
     initialProcedureId ? PROCEDURES_DATA.find(p => p.id === initialProcedureId) || null : null
   );
   const [activeDetailTab, setActiveDetailTab] = useState<'overview' | 'guidelines' | 'faqs'>('overview');
+
+  // Dynamically inject procedure-specific metadata (title, description, OG, Twitter) into <head>
+  const selectedProcedureName = selectedProcedure ? t(selectedProcedure.nameKey) : undefined;
+  useProcedureMetadata(selectedProcedure, language, selectedProcedureName, activeCategory);
 
   const categories = [
     { value: 'all', labelKey: 'gallery.all' },
