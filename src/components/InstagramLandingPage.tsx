@@ -45,6 +45,8 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState<string | null>(null);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   // Before/After Slider State
   const [sliderPositions, setSliderPositions] = useState<{ [key: string]: number }>({
@@ -67,14 +69,42 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
     }
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName || !formData.phone) return;
 
     setIsSubmitting(true);
+    setSubmitError(null);
+    setSubmitMessage(null);
 
-    setTimeout(() => {
-      // Save lead into Dr. Estrella CRM leads storage so it appears in the CRM Portal
+    try {
+      // 1. Dispatch real dual-email notification through backend server
+      const response = await fetch('/api/landing-lead', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          phone: formData.phone,
+          email: formData.email,
+          country: formData.country,
+          procedure: formData.procedure,
+          travelTimeline: formData.travelTimeline,
+          notes: formData.notes,
+          lang: language
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to submit consultation request');
+      }
+
+      setSubmitMessage(data.message || 'Consultation request sent successfully!');
+
+      // 2. Save lead into Dr. Estrella CRM leads storage so it appears immediately in the CRM Portal
       try {
         const existingRaw = localStorage.getItem('dr_estrella_crm_leads');
         const existingLeads = existingRaw ? JSON.parse(existingRaw) : [];
@@ -83,7 +113,7 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
           id: `lead_ig_${Date.now()}`,
           patientName: formData.fullName,
           procedure: formData.procedure,
-          email: formData.email,
+          email: formData.email || 'N/A',
           phone: formData.phone,
           status: 'Evaluation Requested',
           riskLevel: 'Low',
@@ -114,9 +144,13 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
         console.error('Error saving lead to CRM', err);
       }
 
-      setIsSubmitting(false);
       setIsSubmitted(true);
-    }, 800);
+    } catch (err: any) {
+      console.error('Error submitting landing page lead:', err);
+      setSubmitError(err.message || 'An error occurred while sending your request. Please try again or reach out on WhatsApp.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const selectedGallery = GALLERY_ITEMS.slice(0, 3);
@@ -558,10 +592,26 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
                   <div className="w-16 h-16 bg-[#25D366]/10 text-[#25D366] rounded-full flex items-center justify-center mx-auto">
                     <CheckCircle2 className="w-8 h-8" />
                   </div>
-                  <h3 className="font-serif text-2xl font-bold text-[#2D211A]">Consultation Requested!</h3>
+                  <h3 className="font-serif text-2xl font-bold text-[#2D211A]">Virtual Consultation Requested!</h3>
                   <p className="text-xs sm:text-sm text-[#5C4D44] max-w-md mx-auto leading-relaxed">
-                    Thank you, <strong className="text-[#0373bb]">{formData.fullName}</strong>. Our international patient coordinator has received your request for <strong>{formData.procedure}</strong>.
+                    Thank you, <strong className="text-[#0373bb]">{formData.fullName}</strong>. Your request for <strong>{formData.procedure}</strong> has been received by Dr. Víctor Estrella's clinical coordination team.
                   </p>
+
+                  <div className="bg-[#FCFBF9] border border-[#EBE6DF] rounded-xl p-4 text-left max-w-md mx-auto text-xs space-y-1.5 text-[#5C4D44]">
+                    <div className="flex items-center space-x-2 text-[#0373bb] font-bold">
+                      <Mail className="w-4 h-4 text-[#0373bb]" />
+                      <span>Dual Email Alerts Dispatched:</span>
+                    </div>
+                    <p className="text-[11px] text-[#7C6C63]">
+                      • <strong>To Dr. Víctor Estrella:</strong> Clinical alert sent to surgery coordination.<br />
+                      {formData.email && formData.email.includes('@') ? (
+                        <>• <strong>To You ({formData.email}):</strong> Confirmation email with consultation overview.</>
+                      ) : (
+                        <>• <strong>WhatsApp Outreach:</strong> Direct notification queued for {formData.phone}.</>
+                      )}
+                    </p>
+                  </div>
+
                   <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
                     <a
                       href={`https://wa.me/18299358121?text=Hi!%20I%20just%20submitted%20my%20virtual%20consultation%20form%20for%20${encodeURIComponent(formData.procedure)}.%20My%20name%20is%20${encodeURIComponent(formData.fullName)}.`}
@@ -573,7 +623,18 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
                       <span>Speed Up via WhatsApp Chat</span>
                     </a>
                     <button
-                      onClick={() => setIsSubmitted(false)}
+                      onClick={() => {
+                        setIsSubmitted(false);
+                        setFormData({
+                          fullName: '',
+                          email: '',
+                          phone: '',
+                          procedure: 'Liposuction HD & BBL',
+                          travelTimeline: '1-3 Months',
+                          country: 'United States',
+                          notes: ''
+                        });
+                      }}
                       className="w-full sm:w-auto bg-neutral-100 hover:bg-neutral-200 text-[#5C4D44] px-5 py-3.5 rounded-xl font-bold text-xs uppercase tracking-wider"
                     >
                       Submit Another Request
@@ -582,6 +643,12 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-5">
+                  {submitError && (
+                    <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-red-700 text-xs flex items-center space-x-2">
+                      <span className="font-bold">⚠️ Notice:</span>
+                      <span>{submitError}</span>
+                    </div>
+                  )}
                   
                   {/* Name & Phone */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

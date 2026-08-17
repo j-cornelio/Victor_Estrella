@@ -1013,6 +1013,445 @@ Number of Attached Photos: ${attachments.length}
     }
   });
 
+  // API Endpoint: Process Instagram / Landing Page Lead & Dispatch dual emails (Patient + Dr. Victor Estrella)
+  app.post("/api/landing-lead", async (req, res) => {
+    try {
+      const {
+        fullName,
+        phone,
+        email,
+        country = "United States",
+        procedure = "Liposuction HD & BBL",
+        travelTimeline = "1-3 Months",
+        notes = "",
+        lang = "en"
+      } = req.body;
+
+      if (!fullName || !phone) {
+        return res.status(400).json({
+          success: false,
+          error: "Full name and WhatsApp / Phone are required."
+        });
+      }
+
+      console.log(`[Clinical Server] Received Landing Page Lead for: ${fullName} (${phone} | ${email || 'No email'}) - Procedure: ${procedure}`);
+
+      const cleanPhone = phone.replace(/[^0-9]/g, "");
+      const waLink = `https://wa.me/${cleanPhone.startsWith("1") || cleanPhone.startsWith("809") || cleanPhone.startsWith("829") || cleanPhone.startsWith("849") ? cleanPhone : "1" + cleanPhone}`;
+      const clinicWaLink = `https://wa.me/18299358121?text=${encodeURIComponent(`Hello Dr. Victor Estrella team, my name is ${fullName}. I just requested a virtual consultation for ${procedure}.`)}`;
+
+      // Save to In-Memory CRM leads store
+      const newCrmLead = {
+        id: `lead-landing-${Date.now()}`,
+        patientName: fullName,
+        email: email || "N/A",
+        phone: phone,
+        procedure: procedure,
+        status: "evaluation",
+        riskCategory: "low",
+        dateCreated: new Date().toISOString().split("T")[0],
+        estimatedValue: procedure.includes("Mommy") ? 7500 : procedure.includes("Liposuction") ? 5200 : 4500,
+        notes: `[Instagram / Landing Page Lead] Timeline: ${travelTimeline} | Country: ${country}${notes ? ` | Goals: ${notes}` : ""}`,
+        source: "instagram_landing_form"
+      };
+      crmLeadsStore.unshift(newCrmLead);
+
+      const apiKey = process.env.RESEND_API_KEY;
+      let configuredSender = process.env.SENDER_EMAIL || "doctorvictorestrella@gmail.com";
+      if (configuredSender === "onboarding@resend.dev") {
+        configuredSender = "doctorvictorestrella@gmail.com";
+      }
+
+      const verifiedDomain = "contact.drestrellaplasticsurgeon.com";
+      let fromEmail = `consultations@${verifiedDomain}`;
+      if (process.env.SENDER_EMAIL && process.env.SENDER_EMAIL.endsWith(verifiedDomain)) {
+        fromEmail = process.env.SENDER_EMAIL;
+      }
+
+      let patientEmailSent = false;
+      let doctorEmailSent = false;
+      let emailError: string | null = null;
+
+      const isSpanish = lang === "es";
+
+      // 1. Email Template for Patient (English)
+      const patientHtmlEnglish = `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #2D211A; background-color: #FCFBF9; border: 1px solid #EBE6DF; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+          <div style="text-align: center; border-bottom: 1px solid #EBE6DF; padding-bottom: 24px; margin-bottom: 24px;">
+            <h1 style="font-family: Georgia, serif; color: #2D211A; margin: 0; font-size: 26px; font-weight: normal; letter-spacing: -0.5px;">Dr. Víctor Estrella</h1>
+            <p style="text-transform: uppercase; font-size: 9px; letter-spacing: 2.5px; color: #0373bb; font-weight: bold; margin: 6px 0 0 0;">Plastic, Aesthetic & Reconstructive Surgery • Santo Domingo, DR</p>
+          </div>
+          
+          <p style="font-size: 15px; line-height: 1.6; color: #2D211A;">Dear <strong>${fullName}</strong>,</p>
+          
+          <p style="font-size: 14px; line-height: 1.6; color: #5C4D44;">
+            Thank you for requesting a <strong>Pre-Surgical Virtual Consultation</strong> with Dr. Víctor Estrella and our international clinical team in Santo Domingo, Dominican Republic.
+          </p>
+          
+          <div style="background-color: #ffffff; border: 1px solid #EBE6DF; border-radius: 14px; padding: 22px; margin: 24px 0;">
+            <h2 style="font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #0373bb; margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid #FCFBF9; padding-bottom: 8px; font-weight: bold;">
+              Your Virtual Consultation Request Details
+            </h2>
+            <table style="width: 100%; font-size: 13.5px; color: #5C4D44; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; width: 140px; border-bottom: 1px solid #FCFBF9;">Procedure of Interest:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #0373bb; font-weight: bold;">${procedure}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">WhatsApp / Phone:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">${phone}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">Country / State:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">${country}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">Expected Timeline:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">${travelTimeline}</td>
+              </tr>
+              ${notes ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; vertical-align: top;">Aesthetic Goals & Notes:</td>
+                <td style="padding: 8px 0; font-style: italic; color: #7C6C63;">"${notes}"</td>
+              </tr>` : ""}
+            </table>
+
+            <div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #EBE6DF;">
+              <a href="${clinicWaLink}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 28px; font-weight: bold; font-size: 13px; font-family: Arial, sans-serif; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.25);">
+                💬 Connect Directly on WhatsApp with Patient Coordinator
+              </a>
+            </div>
+          </div>
+
+          <p style="font-size: 13.5px; line-height: 1.6; color: #5C4D44;"><strong>What happens next?</strong></p>
+          <ol style="font-size: 13.5px; line-height: 1.6; color: #5C4D44; padding-left: 20px; margin-top: 6px;">
+            <li style="margin-bottom: 8px;">Our specialized bilingual coordinator will review your aesthetic goals with Dr. Estrella's surgical calendar.</li>
+            <li style="margin-bottom: 8px;">We will reach out to you via WhatsApp at <strong>${phone}</strong> to confirm your preferred video call appointment.</li>
+            <li style="margin-bottom: 8px;">We will provide detailed pre-op preparation info, personalized surgical quote, and recovery retreat logistics in Santo Domingo.</li>
+          </ol>
+
+          <div style="border-top: 1px solid #EBE6DF; margin-top: 32px; padding-top: 24px; text-align: center; font-size: 11px; color: #7C6C63; font-family: monospace;">
+            <p style="margin: 0; font-weight: bold; color: #2D211A;">Dr. Víctor Estrella • Plastic & Reconstructive Surgeon</p>
+            <p style="margin: 4px 0 0 0;">IPBMA Medical Associates, Santo Domingo, Dominican Republic</p>
+            <p style="margin: 4px 0 0 0;">SODOCIPRE Board Certified Member • WhatsApp: +1 (829) 935-8121</p>
+          </div>
+        </div>
+      `;
+
+      // 1b. Email Template for Patient (Spanish)
+      const patientHtmlSpanish = `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 24px; color: #2D211A; background-color: #FCFBF9; border: 1px solid #EBE6DF; border-radius: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.02);">
+          <div style="text-align: center; border-bottom: 1px solid #EBE6DF; padding-bottom: 24px; margin-bottom: 24px;">
+            <h1 style="font-family: Georgia, serif; color: #2D211A; margin: 0; font-size: 26px; font-weight: normal; letter-spacing: -0.5px;">Dr. Víctor Estrella</h1>
+            <p style="text-transform: uppercase; font-size: 9px; letter-spacing: 2.5px; color: #0373bb; font-weight: bold; margin: 6px 0 0 0;">Cirugía Plástica, Estética y Reconstructiva • Santo Domingo, RD</p>
+          </div>
+          
+          <p style="font-size: 15px; line-height: 1.6; color: #2D211A;">Estimada/o <strong>${fullName}</strong>,</p>
+          
+          <p style="font-size: 14px; line-height: 1.6; color: #5C4D44;">
+            Gracias por solicitar su <strong>Consulta Virtual Pre-Quirúrgica</strong> con el Dr. Víctor Estrella y nuestro equipo médico en Santo Domingo, República Dominicana.
+          </p>
+          
+          <div style="background-color: #ffffff; border: 1px solid #EBE6DF; border-radius: 14px; padding: 22px; margin: 24px 0;">
+            <h2 style="font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #0373bb; margin-top: 0; margin-bottom: 16px; border-bottom: 1px solid #FCFBF9; padding-bottom: 8px; font-weight: bold;">
+              Detalles de su Solicitud de Consulta
+            </h2>
+            <table style="width: 100%; font-size: 13.5px; color: #5C4D44; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; width: 140px; border-bottom: 1px solid #FCFBF9;">Procedimiento:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #0373bb; font-weight: bold;">${procedure}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">WhatsApp / Teléfono:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">${phone}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">País / Ubicación:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">${country}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">Fecha estimada de viaje:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">${travelTimeline}</td>
+              </tr>
+              ${notes ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; vertical-align: top;">Objetivos Estéticos:</td>
+                <td style="padding: 8px 0; font-style: italic; color: #7C6C63;">"${notes}"</td>
+              </tr>` : ""}
+            </table>
+
+            <div style="text-align: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid #EBE6DF;">
+              <a href="${clinicWaLink}" target="_blank" style="display: inline-block; padding: 12px 24px; background-color: #25D366; color: #ffffff; text-decoration: none; border-radius: 28px; font-weight: bold; font-size: 13px; font-family: Arial, sans-serif; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.25);">
+                💬 Chatear Directamente por WhatsApp con Coordinación
+              </a>
+            </div>
+          </div>
+
+          <p style="font-size: 13.5px; line-height: 1.6; color: #5C4D44;"><strong>¿Cuáles son los siguientes pasos?</strong></p>
+          <ol style="font-size: 13.5px; line-height: 1.6; color: #5C4D44; padding-left: 20px; margin-top: 6px;">
+            <li style="margin-bottom: 8px;">Nuestro coordinador revisará sus objetivos con la agenda quirúrgica del Dr. Estrella.</li>
+            <li style="margin-bottom: 8px;">Le contactaremos vía WhatsApp al <strong>${phone}</strong> para agendar la videollamada HD.</li>
+            <li style="margin-bottom: 8px;">Le enviaremos presupuesto personalizado, indicaciones preoperatorias y opciones de casas de recuperación en Santo Domingo.</li>
+          </ol>
+
+          <div style="border-top: 1px solid #EBE6DF; margin-top: 32px; padding-top: 24px; text-align: center; font-size: 11px; color: #7C6C63; font-family: monospace;">
+            <p style="margin: 0; font-weight: bold; color: #2D211A;">Dr. Víctor Estrella • Cirugía Plástica y Reconstructiva</p>
+            <p style="margin: 4px 0 0 0;">IPBMA Medical Associates, Santo Domingo, República Dominicana</p>
+            <p style="margin: 4px 0 0 0;">Miembro Certificado SODOCIPRE • WhatsApp: +1 (829) 935-8121</p>
+          </div>
+        </div>
+      `;
+
+      // 2. Doctor Alert Email Template (Sent to Dr. Victor Estrella)
+      const doctorSubject = `🔥 [NUEVO LEAD DE INSTAGRAM/LANDING] ${fullName} - ${procedure} (${country})`;
+      const doctorHtml = `
+        <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 650px; margin: 0 auto; padding: 24px; color: #2D211A; background-color: #FCFBF9; border: 2px solid #0373bb; border-radius: 20px; box-shadow: 0 4px 14px rgba(0,0,0,0.05);">
+          <div style="text-align: center; border-bottom: 1px solid #EBE6DF; padding-bottom: 20px; margin-bottom: 20px;">
+            <span style="font-size: 10px; text-transform: uppercase; letter-spacing: 2.5px; color: #ffffff; background-color: #0373bb; padding: 4px 12px; border-radius: 20px; font-weight: bold; display: inline-block;">
+              NUEVO PROSPECTO QUIRÚRGICO DE INSTAGRAM
+            </span>
+            <h1 style="font-family: Georgia, serif; color: #2D211A; margin: 8px 0 0 0; font-size: 24px; font-weight: normal;">
+              Dr. Víctor Estrella Clinic
+            </h1>
+            <p style="font-size: 12px; color: #7C6C63; margin: 4px 0 0 0;">
+              Solicitud de Consulta Virtual Recibida desde la Landing Page
+            </p>
+          </div>
+
+          <div style="background-color: #ffffff; border: 1px solid #EBE6DF; border-radius: 14px; padding: 20px; margin: 20px 0;">
+            <h2 style="font-family: 'Helvetica Neue', Arial, sans-serif; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: #0373bb; margin-top: 0; margin-bottom: 14px; border-bottom: 1px solid #FCFBF9; padding-bottom: 6px; font-weight: bold;">
+              Ficha del Paciente
+            </h2>
+            <table style="width: 100%; font-size: 13.5px; color: #5C4D44; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; width: 160px; border-bottom: 1px solid #FCFBF9;">Nombre Completo:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A; font-weight: bold; font-size: 15px;">${fullName}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">Procedimiento Deseado:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #0373bb; font-weight: bold; font-size: 14px;">${procedure}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">WhatsApp / Teléfono:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">
+                  <a href="${waLink}" style="color: #25D366; font-weight: bold; text-decoration: none;">${phone} (Clic para WhatsApp)</a>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">Correo Electrónico:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">
+                  ${email ? `<a href="mailto:${email}" style="color: #0373bb; text-decoration: none;">${email}</a>` : '<span style="color: #9CA3AF;">No provisto</span>'}
+                </td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">País / Ubicación:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #2D211A;">${country}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; border-bottom: 1px solid #FCFBF9;">Plazo Estimado de Viaje:</td>
+                <td style="padding: 8px 0; border-bottom: 1px solid #FCFBF9; color: #D97706; font-weight: bold;">${travelTimeline}</td>
+              </tr>
+              ${notes ? `
+              <tr>
+                <td style="padding: 8px 0; font-weight: bold; color: #2D211A; vertical-align: top;">Notas / Objetivos del Paciente:</td>
+                <td style="padding: 8px 0; font-style: italic; color: #4B5563; background-color: #F9FAFB; padding: 10px; border-radius: 8px;">"${notes}"</td>
+              </tr>` : ""}
+            </table>
+          </div>
+
+          <div style="text-align: center; margin-top: 24px;">
+            <a href="${waLink}" style="background-color: #25D366; color: white; padding: 14px 28px; text-decoration: none; border-radius: 30px; font-weight: bold; font-size: 14px; display: inline-block; box-shadow: 0 4px 10px rgba(37, 211, 102, 0.3);">
+              💬 Chatear Inmediatamente con ${fullName} por WhatsApp
+            </a>
+          </div>
+
+          <p style="font-size: 11px; color: #7C6C63; line-height: 1.5; margin-top: 24px; text-align: center;">
+            Lead registrado automáticamente en el Portal CRM de la Clínica.<br />
+            © Dr. Víctor Estrella • Coordinación Quirúrgica Santo Domingo
+          </p>
+        </div>
+      `;
+
+      if (apiKey) {
+        // A) Send Doctor Notification Email (to doctorvictorestrella@gmail.com and configured sender)
+        try {
+          console.log(`[Clinical Server] Dispatching Doctor Alert for lead ${fullName} via Resend...`);
+          const doctorRecipients = ["doctorvictorestrella@gmail.com"];
+          if (configuredSender && !doctorRecipients.includes(configuredSender) && configuredSender !== "onboarding@resend.dev") {
+            doctorRecipients.push(configuredSender);
+          }
+
+          const doctorResponse = await fetch("https://api.resend.com/emails", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              from: `Dr. Victor Estrella Leads <${fromEmail}>`,
+              to: doctorRecipients,
+              reply_to: email || undefined,
+              subject: doctorSubject,
+              html: doctorHtml
+            })
+          });
+
+          if (doctorResponse.ok) {
+            doctorEmailSent = true;
+            console.log(`[Clinical Server] Lead notification email delivered to Dr. Victor Estrella (${doctorRecipients.join(', ')})`);
+          } else {
+            const docErr = await doctorResponse.text();
+            console.warn(`[Clinical Server] Primary delivery to doctor was rejected by Resend:`, docErr);
+
+            // Handle sandbox fallback if doctor is not yet authorized on Resend sandbox
+            const isSandboxError = docErr.includes("own email address") || docErr.includes("testing emails") || docErr.includes("validation_error");
+            if (isSandboxError) {
+              let targetRecipient = configuredSender;
+              const emailMatch = docErr.match(/\(([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\)/);
+              if (emailMatch && emailMatch[1]) {
+                targetRecipient = emailMatch[1];
+              }
+
+              console.log(`[Clinical Server] Resend Sandbox detected. Redirecting Doctor alert copy to verified developer email: ${targetRecipient}`);
+              const sandboxDocResponse = await fetch("https://api.resend.com/emails", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  Authorization: `Bearer ${apiKey}`
+                },
+                body: JSON.stringify({
+                  from: `Dr. Victor Estrella Leads <${fromEmail}>`,
+                  to: [targetRecipient],
+                  reply_to: email || undefined,
+                  subject: `[Sandbox Copy] ${doctorSubject}`,
+                  html: `
+                    <div style="background-color: #FEF3C7; border: 1px solid #D97706; padding: 16px; margin-bottom: 20px; border-radius: 10px; font-family: sans-serif; font-size: 13px; color: #92400E;">
+                      <strong>Resend Sandbox Redirect:</strong> This lead alert was addressed to <strong>doctorvictorestrella@gmail.com</strong>. Because your Resend account is in sandbox testing mode, this lead notification was redirected to your verified email (<strong>${targetRecipient}</strong>).
+                    </div>
+                    ${doctorHtml}
+                  `
+                })
+              });
+
+              if (sandboxDocResponse.ok) {
+                doctorEmailSent = true;
+                console.log(`[Clinical Server] Sandbox redirect to ${targetRecipient} was delivered.`);
+              }
+            }
+          }
+        } catch (docErr: any) {
+          console.error(`[Clinical Server] Error sending doctor alert email:`, docErr);
+          emailError = docErr.message;
+        }
+
+        // B) Send Patient Confirmation Email (if patient entered an email address)
+        if (email && email.includes("@")) {
+          try {
+            console.log(`[Clinical Server] Dispatching Patient Confirmation to ${email} via Resend...`);
+            const patientSubject = isSpanish
+              ? `✨ Confirmación de Solicitud de Consulta Virtual - Dr. Víctor Estrella`
+              : `✨ Virtual Consultation Request Received - Dr. Víctor Estrella`;
+
+            const patientHtml = isSpanish ? patientHtmlSpanish : patientHtmlEnglish;
+
+            const patientResponse = await fetch("https://api.resend.com/emails", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${apiKey}`
+              },
+              body: JSON.stringify({
+                from: `Dr. Victor Estrella Clinic <${fromEmail}>`,
+                to: [email],
+                subject: patientSubject,
+                html: patientHtml
+              })
+            });
+
+            if (patientResponse.ok) {
+              patientEmailSent = true;
+              console.log(`[Clinical Server] Patient confirmation email successfully sent to ${email}`);
+            } else {
+              const pErr = await patientResponse.text();
+              console.warn(`[Clinical Server] Patient confirmation email rejected by Resend:`, pErr);
+
+              // If sandbox mode, send sandbox copy to developer
+              const isSandboxError = pErr.includes("own email address") || pErr.includes("testing emails") || pErr.includes("validation_error");
+              if (isSandboxError) {
+                let targetRecipient = configuredSender;
+                const emailMatch = pErr.match(/\(([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})\)/);
+                if (emailMatch && emailMatch[1]) {
+                  targetRecipient = emailMatch[1];
+                }
+
+                console.log(`[Clinical Server] Resend Sandbox mode: Redirecting patient confirmation copy to ${targetRecipient}`);
+                const sandboxPatientResponse = await fetch("https://api.resend.com/emails", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Authorization: `Bearer ${apiKey}`
+                  },
+                  body: JSON.stringify({
+                    from: `Dr. Victor Estrella Clinic <${fromEmail}>`,
+                    to: [targetRecipient],
+                    subject: `[Sandbox Patient Copy] ${patientSubject}`,
+                    html: `
+                      <div style="background-color: #FEF3C7; border: 1px solid #D97706; padding: 16px; margin-bottom: 20px; border-radius: 10px; font-family: sans-serif; font-size: 13px; color: #92400E;">
+                        <strong>Resend Sandbox Redirect:</strong> This confirmation was originally addressed to patient <strong>${email}</strong>. Delivered to <strong>${targetRecipient}</strong> for testing preview.
+                      </div>
+                      ${patientHtml}
+                    `
+                  })
+                });
+
+                if (sandboxPatientResponse.ok) {
+                  patientEmailSent = true;
+                }
+              }
+            }
+          } catch (pErr: any) {
+            console.error(`[Clinical Server] Error sending patient confirmation:`, pErr);
+          }
+        }
+      } else {
+        // Simulation mode
+        console.warn("[Clinical Server] RESEND_API_KEY is not defined. Simulating dual email dispatch for Landing Lead.");
+        console.log(`
+[Clinical Server] SIMULATED DUAL EMAIL DISPATCH:
+--------------------------------------------------
+1. DOCTOR ALERT:
+   To: doctorvictorestrella@gmail.com
+   Subject: ${doctorSubject}
+   Patient: ${fullName} | Phone: ${phone} | Procedure: ${procedure} | Country: ${country}
+
+2. PATIENT CONFIRMATION:
+   To: ${email || "No email provided (WhatsApp only)"}
+   From: Dr. Victor Estrella Clinic <${fromEmail}>
+   Subject: Virtual Consultation Request Confirmation
+--------------------------------------------------
+        `);
+        doctorEmailSent = true;
+        patientEmailSent = true;
+      }
+
+      return res.status(200).json({
+        success: true,
+        patientEmailSent,
+        doctorEmailSent,
+        simulated: !apiKey,
+        message: apiKey 
+          ? "Virtual consultation requested! Email alerts dispatched to Dr. Víctor Estrella and patient."
+          : "Virtual consultation requested! (Emails simulated in developer console)."
+      });
+    } catch (err: any) {
+      console.error("[Clinical Server] Error in /api/landing-lead route:", err);
+      return res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
   // Resolve production static files directory reliably across Docker/Hostinger/Node environments
   function getDistDirectory(): string {
     const candidatePaths = [
