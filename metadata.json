@@ -1,0 +1,6 @@
+{
+  "name": "Dr. Victor Estrella - Aesthetic & Reconstructive Surgery",
+  "description": "Premium plastic surgery clinic featuring persistent Firestore patient records, PDF medical documents, payments & quotes tracking, interactive recovery dashboard, and staff CRM.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

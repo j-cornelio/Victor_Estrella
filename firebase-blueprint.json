@@ -1,0 +1,137 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile with role and identity info",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "role": { "type": "string", "enum": ["client", "staff", "doctor", "admin"] },
+        "phone": { "type": "string" },
+        "avatarUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "mrn": { "type": "string" }
+      },
+      "required": ["uid", "email", "role"]
+    },
+    "PatientRecord": {
+      "title": "PatientRecord",
+      "description": "Clinical and financial records, files and appointments for a patient",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "patientEmail": { "type": "string" },
+        "procedure": { "type": "string" },
+        "status": { "type": "string" },
+        "paidAmount": { "type": "number" },
+        "totalAmount": { "type": "number" },
+        "paymentStatus": { "type": "string" },
+        "appointments": { "type": "array" },
+        "files": { "type": "array" },
+        "medications": { "type": "array" },
+        "labs": { "type": "array" },
+        "vitalSigns": { "type": "object" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["userId", "patientEmail"]
+    },
+    "Consultation": {
+      "title": "Consultation",
+      "description": "Appointment booking information and calendar events",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "firstName": { "type": "string" },
+        "lastName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "procedure": { "type": "string" },
+        "specialistId": { "type": "string" },
+        "date": { "type": "string" },
+        "time": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["scheduled", "confirmed", "completed", "cancelled"] },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["email", "date", "time"]
+    },
+    "ClientQuote": {
+      "title": "ClientQuote",
+      "description": "Financial surgical quotes, payment breakdown and status",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "clientEmail": { "type": "string" },
+        "clientName": { "type": "string" },
+        "procedure": { "type": "string" },
+        "date": { "type": "string" },
+        "totalAmount": { "type": "number" },
+        "paidAmount": { "type": "number" },
+        "status": { "type": "string", "enum": ["draft", "sent", "approved", "paid", "partial"] },
+        "breakdown": { "type": "array" },
+        "pdfDataUrl": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["clientEmail", "totalAmount"]
+    },
+    "CrmLead": {
+      "title": "CrmLead",
+      "description": "CRM leads and inquiries for staff patient management",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "patientName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "procedure": { "type": "string" },
+        "status": { "type": "string" },
+        "riskCategory": { "type": "string" },
+        "bmi": { "type": "number" },
+        "dateCreated": { "type": "string" },
+        "appointmentDate": { "type": "string" },
+        "appointmentTime": { "type": "string" },
+        "estimatedValue": { "type": "number" },
+        "notes": { "type": "string" },
+        "source": { "type": "string" },
+        "medicalSummary": { "type": "object" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" }
+      },
+      "required": ["patientName", "email", "phone"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/UserProfile" },
+      "description": "User profile collection containing authenticated user data and roles"
+    },
+    "/patient_records/{recordId}": {
+      "schema": { "$ref": "#/entities/PatientRecord" },
+      "description": "Clinical and financial records, PDF uploads, medications, and labs linked to patient userId"
+    },
+    "/consultations/{consultationId}": {
+      "schema": { "$ref": "#/entities/Consultation" },
+      "description": "Booking consultations and calendar events"
+    },
+    "/quotes/{quoteId}": {
+      "schema": { "$ref": "#/entities/ClientQuote" },
+      "description": "Financial quotes and payment records for patients"
+    },
+    "/leads/{leadId}": {
+      "schema": { "$ref": "#/entities/CrmLead" },
+      "description": "CRM leads for staff patient management"
+    }
+  }
+}

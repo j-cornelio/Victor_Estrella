@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "services": [
+    {
+      "type": "app",
+      "data": {
+        "serviceName": "dr-estrella-app",
+        "source": {
+          "type": "dockerfile"
+        },
+        "build": {
+          "type": "dockerfile",
+          "dockerfile": "Dockerfile"
+        },
+        "ports": [
+          {
+            "publishedPort": 3000,
+            "targetPort": 3000,
+            "protocol": "tcp"
+          }
+        ],
+        "env": "NODE_ENV=production\nPORT=3000"
+      }
+    }
+  ]
+}

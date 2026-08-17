@@ -1,0 +1,103 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Deny Catch-all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isStaff() {
+      return isAuthenticated() && (
+        request.auth.token.email == 'empjulio@gmail.com' ||
+        (request.auth.token.email != null && request.auth.token.email.matches('.*@drestrellaplasticsurgeon[.]com')) ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && 
+         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['staff', 'doctor', 'admin'])
+      );
+    }
+    
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // User profiles (staff and patients)
+    match /users/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow create, update: if isOwner(userId) || isStaff();
+      allow delete: if isStaff();
+    }
+
+    // Patient Clinical & Financial Records (including Base64 PDF Documents, Vital Signs, Labs)
+    match /patient_records/{recordId} {
+      allow read: if isStaff() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid || 
+          resource.data.patientEmail == request.auth.token.email
+        )
+      );
+      allow create: if isStaff() || (
+        isAuthenticated() && request.resource.data.userId == request.auth.uid
+      );
+      allow update: if isStaff() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          request.resource.data.userId == request.auth.uid
+        )
+      );
+      allow delete: if isStaff();
+    }
+
+    // Consultations & Appointments (Calendar & Booking)
+    match /consultations/{consultationId} {
+      allow read: if isStaff() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid || 
+          resource.data.email == request.auth.token.email
+        )
+      );
+      allow create: if true; // Allows website booking form
+      allow update: if isStaff() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid || 
+          resource.data.email == request.auth.token.email
+        )
+      );
+      allow delete: if isStaff();
+    }
+
+    // Client Invoices & Surgical Quotes (Financial records & payment status)
+    match /quotes/{quoteId} {
+      allow read: if isStaff() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email
+        )
+      );
+      allow create: if isStaff();
+      allow update: if isStaff() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid ||
+          resource.data.clientEmail == request.auth.token.email
+        )
+      );
+      allow delete: if isStaff();
+    }
+
+    // CRM Leads & Inquiries
+    match /leads/{leadId} {
+      allow read: if isStaff() || (
+        isAuthenticated() && (
+          resource.data.userId == request.auth.uid || 
+          resource.data.email == request.auth.token.email
+        )
+      );
+      allow create: if true; // Public lead capture from website & evaluation modal
+      allow update, delete: if isStaff();
+    }
+  }
+}
