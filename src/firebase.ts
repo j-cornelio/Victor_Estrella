@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
   signInWithPopup,
+  signInAnonymously,
   GoogleAuthProvider,
   signOut, 
   onAuthStateChanged,
@@ -104,10 +105,25 @@ export async function testConnection() {
 }
 testConnection();
 
+// Helper to ensure authenticated or anonymous user session for database operations
+export async function ensureAuthSession(): Promise<FirebaseUser | null> {
+  if (auth.currentUser) {
+    return auth.currentUser;
+  }
+  try {
+    const cred = await signInAnonymously(auth);
+    return cred.user;
+  } catch (err) {
+    console.debug("[Firebase Auth] Anonymous sign-in:", err);
+    return null;
+  }
+}
+
 export {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   signInWithPopup,
+  signInAnonymously,
   GoogleAuthProvider,
   signOut,
   onAuthStateChanged,

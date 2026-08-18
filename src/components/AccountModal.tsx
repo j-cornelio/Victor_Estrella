@@ -53,14 +53,14 @@ export default function AccountModal({
       try {
         const rawCons = localStorage.getItem('lumiskin_consultations');
         const allCons: Consultation[] = rawCons ? JSON.parse(rawCons) : [];
-        const userCons = allCons.filter(c => c.email.toLowerCase() === activeEmail.toLowerCase());
+        const userCons = allCons.filter(c => c && c.email && typeof c.email === 'string' && c.email.toLowerCase() === activeEmail.toLowerCase());
         
         // Add sample live consultation for realistic demo if empty
         if (userCons.length === 0) {
           userCons.push({
             id: 'cons-' + Math.random().toString(36).substring(2, 7),
-            firstName: activeName.split(' ')[0] || 'Patient',
-            lastName: activeName.split(' ').slice(1).join(' ') || '',
+            firstName: activeName ? activeName.split(' ')[0] : 'Patient',
+            lastName: activeName && activeName.split(' ').length > 1 ? activeName.split(' ').slice(1).join(' ') : '',
             email: activeEmail,
             phone: '+1 809 555 0199',
             procedure: 'Lipoescultura HD con Marcación',
@@ -95,7 +95,7 @@ export default function AccountModal({
         // Orders
         const rawOrders = localStorage.getItem('lumiskin_orders');
         const allOrders: Order[] = rawOrders ? JSON.parse(rawOrders) : [];
-        const userOrders = allOrders.filter(o => o.customerEmail.toLowerCase() === activeEmail.toLowerCase());
+        const userOrders = allOrders.filter(o => o && o.customerEmail && typeof o.customerEmail === 'string' && o.customerEmail.toLowerCase() === activeEmail.toLowerCase());
         setOrders(userOrders);
       } catch (err) {
         console.error('Error loading patient account data', err);

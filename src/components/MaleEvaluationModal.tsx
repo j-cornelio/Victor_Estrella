@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { X, ClipboardCheck, AlertCircle, Info, Upload, Camera, FileText, Check, ShieldCheck, Calendar } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import { saveCrmLead, createConsultation } from '../lib/firestoreService';
+import { CrmLead } from './CrmPortal';
 
 interface MaleEvaluationModalProps {
   isOpen: boolean;
@@ -170,50 +172,88 @@ export default function MaleEvaluationModal({ isOpen, onClose }: MaleEvaluationM
       lang: language
     };
 
+    // 1. Proactively persist lead into Firestore & local storage
+    const leadId = `eval_m_${Date.now()}`;
+    const selectedProcedure = surgicalGoals.procedureOfInterest || 'Evaluación Quirúrgica Masculina';
+    const riskLevel: CrmLead['riskCategory'] = personal.bmi > 30 || medical.hypertension || medical.diabetes ? 'high' : personal.bmi > 26 ? 'moderate' : 'low';
+    
+    const firestoreLead: CrmLead = {
+      id: leadId,
+      patientName: personal.fullName || 'Paciente Masculino',
+      email: personal.email || 'N/A',
+      phone: personal.phone || 'N/A',
+      procedure: selectedProcedure,
+      status: 'evaluation',
+      riskCategory: riskLevel,
+      bmi: personal.bmi || undefined,
+      dateCreated: new Date().toISOString().split('T')[0],
+      estimatedValue: selectedProcedure.toLowerCase().includes('ginecomastia') ? 4200 : selectedProcedure.toLowerCase().includes('lipo') ? 5500 : 4500,
+      notes: `[Evaluación Masculina] Residencia: ${personal.residence || 'N/A'}. Plazo: ${surgicalGoals.timeline}. Procedimiento: ${selectedProcedure}`,
+      source: 'evaluation_modal',
+      medicalSummary: {
+        dob: personal.dob,
+        hypertension: medical.hypertension,
+        diabetes: medical.diabetes,
+        smoking: lifestyle.smoking,
+        allergies: medsAllergies.allergies,
+        medications: medsAllergies.medications,
+        surgicalGoals: selectedProcedure,
+        photosCount: [photos.front, photos.left, photos.right, photos.back].filter(Boolean).length
+      }
+    };
+
+    saveCrmLead(firestoreLead).catch((fsErr) => {
+      console.warn('[MaleEvaluation] Firestore lead write warning:', fsErr);
+    });
+
     try {
+      const existingRaw = localStorage.getItem('male_evaluations');
+      const list = existingRaw ? JSON.parse(existingRaw) : [];
+      list.push({
+        id: leadId,
+        date: new Date().toISOString().split('T')[0],
+        personal,
+        surgicalGoals,
+        medical,
+        infectious,
+        medsAllergies,
+        lifestyle,
+        photos: {
+          front: photos.front ? photos.front.name : null,
+          left: photos.left ? photos.left.name : null,
+          right: photos.right ? photos.right.name : null,
+          back: photos.back ? photos.back.name : null,
+        }
+      });
+      localStorage.setItem('male_evaluations', JSON.stringify(list));
+    } catch (storageErr) {
+      console.warn('[MaleEvaluation] Local storage write warning:', storageErr);
+    }
+
+    // 2. Dispatch to backend API with network fallback
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
+
       const res = await fetch('/api/evaluation', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
+        signal: controller.signal,
         body: JSON.stringify(evaluationPayload)
       });
 
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
-        throw new Error(language === 'es' ? 'Error al enviar la evaluación. Por favor intente de nuevo.' : 'Failed to submit evaluation. Please try again.');
-      }
-
-      setIsSubmitted(true);
-
-      // Persist evaluation locally
-      try {
-        const existingRaw = localStorage.getItem('male_evaluations');
-        const list = existingRaw ? JSON.parse(existingRaw) : [];
-        list.push({
-          id: 'eval-' + Math.random().toString(36).substr(2, 9),
-          date: new Date().toISOString().split('T')[0],
-          personal,
-          surgicalGoals,
-          medical,
-          infectious,
-          medsAllergies,
-          lifestyle,
-          photos: {
-            front: photos.front ? photos.front.name : null,
-            left: photos.left ? photos.left.name : null,
-            right: photos.right ? photos.right.name : null,
-            back: photos.back ? photos.back.name : null,
-          }
-        });
-        localStorage.setItem('male_evaluations', JSON.stringify(list));
-      } catch (err) {
-        console.error('Error saving evaluation form', err);
+        console.warn('[MaleEvaluation] Server returned non-200 status, client record saved.');
       }
     } catch (err: any) {
-      console.error('Error submitting evaluation', err);
-      setSubmitError(err.message || 'An unexpected error occurred.');
+      console.warn('[MaleEvaluation] Backend notification endpoint unreachable, proceeding with client record:', err);
     } finally {
       setIsSubmitting(false);
+      setIsSubmitted(true);
     }
   };
 

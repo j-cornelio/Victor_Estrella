@@ -1,11 +1,6 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Global Deny Catch-all
-    match /{document=**} {
-      allow read, write: if false;
-    }
 
     // Helper functions
     function isAuthenticated() {
@@ -60,7 +55,7 @@ service cloud.firestore {
           resource.data.email == request.auth.token.email
         )
       );
-      allow create: if true; // Allows website booking form
+      allow create: if true; // Allows website booking form & landing page virtual consultations
       allow update: if isStaff() || (
         isAuthenticated() && (
           resource.data.userId == request.auth.uid || 
@@ -96,8 +91,8 @@ service cloud.firestore {
           resource.data.email == request.auth.token.email
         )
       );
-      allow create: if true; // Public lead capture from website & evaluation modal
-      allow update, delete: if isStaff();
+      allow create, update: if true; // Public lead capture from website, landing page & evaluation modal
+      allow delete: if isStaff();
     }
   }
 }

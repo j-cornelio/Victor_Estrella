@@ -7,6 +7,7 @@ import FemaleEvaluationModal from './FemaleEvaluationModal';
 import MaleEvaluationModal from './MaleEvaluationModal';
 import AddToCalendarButton from './AddToCalendarButton';
 import { initCalendarAuth, googleSignInForCalendar, calendarSignOut, createCalendarEvent } from '../lib/googleCalendar';
+import { saveCrmLead, createConsultation } from '../lib/firestoreService';
 
 interface ContactSectionProps {
   preselectedSpecialistId?: string;
@@ -211,6 +212,37 @@ export default function ContactSection({
         notes: formData.notes,
         status: 'scheduled'
       };
+
+      // Save to Firestore leads and consultations
+      const leadId = `lead_web_${Date.now()}`;
+      saveCrmLead({
+        id: leadId,
+        patientName: `${formData.firstName} ${formData.lastName}`.trim(),
+        email: formData.email,
+        phone: formData.phone,
+        procedure: formData.procedure,
+        status: 'scheduled',
+        riskCategory: 'low',
+        dateCreated: new Date().toISOString().split('T')[0],
+        appointmentDate: formData.date,
+        appointmentTime: formData.time,
+        estimatedValue: 4500,
+        notes: formData.notes,
+        source: 'website_form'
+      }).catch(err => console.warn('[Contact] Firestore lead write warning:', err));
+
+      createConsultation({
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        procedure: formData.procedure,
+        specialistId: formData.specialistId || 'dr-estrella',
+        date: formData.date,
+        time: formData.time,
+        notes: formData.notes,
+        status: 'scheduled'
+      }).catch(err => console.warn('[Contact] Firestore consultation write warning:', err));
 
       // Also persist to local storage for patient portal dashboard tracking
       const existingConsultationsRaw = localStorage.getItem('lumiskin_consultations');

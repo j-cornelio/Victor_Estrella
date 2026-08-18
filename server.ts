@@ -15,8 +15,9 @@ async function startServer() {
     res.json({ ok: true, version: "1.0.0" });
   });
 
-  // Body parser middleware
-  app.use(express.json() as express.RequestHandler);
+  // Body parser middleware with generous limit for medical evaluations and photo submissions
+  app.use(express.json({ limit: "50mb" }) as express.RequestHandler);
+  app.use(express.urlencoded({ extended: true, limit: "50mb" }) as express.RequestHandler);
 
   app.get("/api/health", (_req, res) => {
     res.json({ ok: true, status: "healthy" });
