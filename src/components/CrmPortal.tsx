@@ -7,9 +7,11 @@ import {
   Upload, Trash2, Eye, ShieldCheck, Stethoscope, Heart
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
-import { PatientRecord, PatientFile } from '../types';
+import { PatientRecord, PatientFile, Consultation } from '../types';
+import { formatConversationalDate } from '../utils/dateFormatter';
 import { 
   subscribeToCrmLeads, 
+  subscribeToAllConsultations,
   saveCrmLead, 
   subscribeToAllPatientRecords, 
   savePatientRecord,
@@ -142,12 +144,15 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
 
   // Firestore CRM Leads state
   const [leads, setLeads] = useState<CrmLead[]>(INITIAL_DEMO_LEADS);
+  const [fsLeads, setFsLeads] = useState<CrmLead[]>([]);
+  const [fsConsultations, setFsConsultations] = useState<Consultation[]>([]);
+  const [isLiveConnected, setIsLiveConnected] = useState(false);
 
   // Firestore Patient Records state (Staff management of patient files, payments, booking)
   const [patientRecords, setPatientRecords] = useState<PatientRecord[]>([]);
   const [selectedRecord, setSelectedRecord] = useState<PatientRecord | null>(null);
 
-  const [activeTab, setActiveTab] = useState<'pipeline' | 'patients' | 'calendar' | 'analytics' | 'deployment'>('pipeline');
+  const [activeTab, setActiveTab] = useState<'pipeline' | 'patients' | 'calendar' | 'analytics'>('pipeline');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<string>('all');
@@ -172,18 +177,23 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
   const [fileNotes, setFileNotes] = useState('');
   const staffFileInputRef = useRef<HTMLInputElement>(null);
 
-  // Subscribe to real-time Firestore leads and patient records
+  // Subscribe to real-time Firestore leads, consultations, and patient records
   useEffect(() => {
     if (!isAuthenticated) return;
 
     // 1. Subscribe to Firestore leads
     const unsubLeads = subscribeToCrmLeads((firestoreLeads) => {
-      if (firestoreLeads && firestoreLeads.length > 0) {
-        setLeads(firestoreLeads);
-      }
+      setIsLiveConnected(true);
+      setFsLeads(firestoreLeads || []);
     });
 
-    // 2. Subscribe to Firestore patient records
+    // 2. Subscribe to Firestore consultations (website booking & Instagram leads)
+    const unsubCons = subscribeToAllConsultations((consultations) => {
+      setIsLiveConnected(true);
+      setFsConsultations(consultations || []);
+    });
+
+    // 3. Subscribe to Firestore patient records
     const unsubRecords = subscribeToAllPatientRecords((records) => {
       setPatientRecords(records);
       if (selectedRecord) {
@@ -194,9 +204,56 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
 
     return () => {
       unsubLeads();
+      unsubCons();
       unsubRecords();
     };
   }, [isAuthenticated, selectedRecord?.id]);
+
+  // Merge real-time Firestore data into Pipeline
+  useEffect(() => {
+    const consultationLeads: CrmLead[] = fsConsultations.map((c) => ({
+      id: c.id,
+      patientName: `${c.firstName || ''} ${c.lastName || ''}`.trim() || c.email || 'Paciente',
+      email: c.email || '',
+      phone: c.phone || '',
+      procedure: c.procedure || 'Consulta Cirugía Plástica',
+      status: (c.status === 'confirmed' || c.status === 'scheduled') ? 'scheduled' : 'new',
+      riskCategory: 'low',
+      bmi: 24.0,
+      dateCreated: c.date || new Date().toISOString().split('T')[0],
+      appointmentDate: c.date || '',
+      appointmentTime: c.time || '10:00 AM',
+      estimatedValue: 4500,
+      notes: c.notes || '',
+      source: 'website_form'
+    }));
+
+    const combinedMap = new Map<string, CrmLead>();
+    
+    // Add Firestore leads
+    fsLeads.forEach(l => {
+      combinedMap.set(l.id, l);
+    });
+
+    // Add Firestore consultations
+    consultationLeads.forEach(cl => {
+      if (!combinedMap.has(cl.id)) {
+        const existing = Array.from(combinedMap.values()).find(
+          l => l.email && cl.email && l.email.toLowerCase() === cl.email.toLowerCase()
+        );
+        if (!existing) {
+          combinedMap.set(cl.id, cl);
+        }
+      }
+    });
+
+    const realList = Array.from(combinedMap.values());
+    if (realList.length > 0) {
+      setLeads(realList);
+    } else {
+      setLeads(INITIAL_DEMO_LEADS);
+    }
+  }, [fsLeads, fsConsultations]);
 
   // Doctor PIN login handler
   const handlePinSubmit = (e: React.FormEvent) => {
@@ -533,7 +590,9 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
               </div>
               <div>
                 <h1 className="text-sm font-bold text-[#2D211A] leading-tight">Dr. Víctor Estrella</h1>
-                <p className="text-[11px] text-neutral-500 font-medium">{t('crm.crmPortalName')}</p>
+                <p className="text-[11px] text-neutral-500 font-medium">
+                  {t('crm.crmPortalName') || (language === 'es' ? 'Portal Clínico & Gestión de Pacientes' : 'Clinical CRM & Patient Portal')}
+                </p>
               </div>
             </div>
           </div>
@@ -541,11 +600,10 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
           {/* Nav Tabs */}
           <div className="hidden md:flex items-center space-x-1">
             {[
-              { id: 'pipeline', label: t('crm.tabPipeline'), icon: Users },
+              { id: 'pipeline', label: 'Pipeline', icon: Users },
               { id: 'patients', label: language === 'es' ? 'Expedientes & Pagos' : 'Patient Records & PDFs', icon: FileText },
-              { id: 'calendar', label: t('crm.tabCalendar'), icon: Calendar },
-              { id: 'analytics', label: t('crm.tabAnalytics'), icon: Activity },
-              { id: 'deployment', label: t('crm.tabDeployment'), icon: Server },
+              { id: 'calendar', label: t('crm.tabCalendar') || 'Calendar', icon: Calendar },
+              { id: 'analytics', label: t('crm.tabAnalytics') || 'Analytics', icon: Activity },
             ].map((tab) => {
               const Icon = tab.icon;
               return (
@@ -688,18 +746,57 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
               </div>
             </div>
 
+            {/* Live Firestore Connection Status Banner */}
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-neutral-50 rounded-xl border border-neutral-200/80 text-[11px]">
+              <div className="flex items-center space-x-2">
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span className="font-semibold text-neutral-700">
+                  {language === 'es' ? 'Sincronización en Tiempo Real con Cloud Firestore' : 'Real-Time Sync with Cloud Firestore'}
+                </span>
+                <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-full font-bold text-neutral-600">
+                  {fsLeads.length + fsConsultations.length > 0 
+                    ? `${fsLeads.length + fsConsultations.length} ${language === 'es' ? 'registros en vivo' : 'live records'}`
+                    : `${leads.length} ${language === 'es' ? 'registros' : 'records'}`}
+                </span>
+              </div>
+
+              {fsLeads.length + fsConsultations.length > 0 && (
+                <span className="text-emerald-700 font-medium flex items-center space-x-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>{language === 'es' ? 'Mostrando datos reales de Firestore' : 'Displaying live Firestore documents'}</span>
+                </span>
+              )}
+            </div>
+
             {/* Leads Table */}
             <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
+              <table id="crm-leads-table" className="w-full text-left text-xs">
                 <thead>
-                  <tr className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-bold uppercase tracking-wider">
-                    <th className="p-3">{t('crm.patientCol')}</th>
-                    <th className="p-3">{t('crm.procCol')}</th>
-                    <th className="p-3">{t('crm.statusCol')}</th>
-                    <th className="p-3">{t('crm.riskCol')}</th>
-                    <th className="p-3">{t('crm.appDateCol')}</th>
-                    <th className="p-3">{t('crm.valueCol')}</th>
-                    <th className="p-3 text-right">{t('crm.actionsCol')}</th>
+                  <tr id="crm-leads-table-header-row" className="bg-neutral-50 border-b border-neutral-200 text-neutral-500 font-bold uppercase tracking-wider text-[11px]">
+                    <th id="th-patient-name" className="p-3">
+                      {language === 'es' ? 'Paciente' : 'Patient'}
+                    </th>
+                    <th id="th-procedure" className="p-3">
+                      {language === 'es' ? 'Procedimiento' : 'Procedure'}
+                    </th>
+                    <th id="th-status" className="p-3">
+                      {language === 'es' ? 'Estado' : 'Status'}
+                    </th>
+                    <th id="th-risk-level" className="p-3">
+                      {language === 'es' ? 'Evaluación Médica' : 'Medical Evaluation'}
+                    </th>
+                    <th id="th-appointment-date" className="p-3">
+                      {language === 'es' ? 'Fecha de Cita' : 'Appointment Date'}
+                    </th>
+                    <th id="th-estimated-value" className="p-3">
+                      {language === 'es' ? 'Valor Estimado' : 'Est. Value'}
+                    </th>
+                    <th id="th-actions" className="p-3 text-right">
+                      {language === 'es' ? 'Acciones' : 'Actions'}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
@@ -727,7 +824,9 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
                       </td>
 
                       <td className="p-3 text-neutral-600 font-medium">
-                        {lead.appointmentDate ? `${lead.appointmentDate} (${lead.appointmentTime})` : 'Pendiente'}
+                        {lead.appointmentDate 
+                          ? `${formatConversationalDate(lead.appointmentDate, language)}${lead.appointmentTime ? ` (${lead.appointmentTime})` : ''}` 
+                          : <span className="text-neutral-400 italic">{language === 'es' ? 'Por agendar' : 'Pending schedule'}</span>}
                       </td>
 
                       <td className="p-3 font-bold text-neutral-900">
@@ -919,7 +1018,7 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
                               <FileText className="w-4 h-4 text-red-500 shrink-0" />
                               <div className="min-w-0">
                                 <span className="font-bold text-slate-800 truncate block">{f.name}</span>
-                                <span className="text-[10px] text-slate-400">{f.uploadDate} • Subido por: {f.uploadedBy}</span>
+                                <span className="text-[10px] text-slate-400">{formatConversationalDate(f.uploadDate, language)} • Subido por: {f.uploadedBy}</span>
                               </div>
                             </div>
 
@@ -964,7 +1063,7 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
                 <div key={lead.id} className="p-4 bg-neutral-50 border border-neutral-200 rounded-2xl space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="px-2.5 py-0.5 bg-[#0373bb] text-white rounded-full font-bold text-[10px]">
-                      {lead.appointmentDate}
+                      {formatConversationalDate(lead.appointmentDate, language)}
                     </span>
                     <span className="text-xs font-bold text-neutral-600">{lead.appointmentTime}</span>
                   </div>
@@ -1015,47 +1114,6 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
                 <p className="text-3xl font-serif font-bold text-purple-600">82%</p>
                 <p className="text-xs text-neutral-500">{t('crm.mainChannelDesc')}</p>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* TAB 5: HOSTINGER SUBDOMAIN DEPLOYMENT GUIDE */}
-        {activeTab === 'deployment' && (
-          <div className="bg-white rounded-3xl border border-neutral-200/80 shadow-xs p-6 md:p-8 space-y-8">
-            <div className="border-b border-neutral-200 pb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <div className="flex items-center space-x-2">
-                  <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold uppercase tracking-widest rounded-full">{t('crm.recArch')}</span>
-                  <span className="text-xs font-mono text-neutral-400">Hostinger hPanel Setup</span>
-                </div>
-                <h2 className="font-serif text-2xl font-bold text-[#2D211A]">
-                  {t('crm.deployTitle')}
-                </h2>
-                <p className="text-xs text-neutral-600">
-                  {t('crm.deploySubtitle')}
-                </p>
-              </div>
-
-              <a
-                href="https://hpanel.hostinger.com"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="px-5 py-2.5 bg-[#0373bb] hover:bg-[#025c96] text-white rounded-xl text-xs font-bold transition-all shadow-xs flex items-center gap-2"
-              >
-                <span>{t('crm.hostingerButton')}</span>
-                <ExternalLink className="w-4 h-4" />
-              </a>
-            </div>
-
-            {/* Direct Recommendation Box */}
-            <div className="p-6 bg-emerald-50/80 border border-emerald-200 rounded-2xl space-y-3">
-              <div className="flex items-center space-x-2 text-emerald-800 font-bold text-sm">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                <span>{t('crm.yesBest')}</span>
-              </div>
-              <p className="text-xs text-emerald-900 leading-relaxed">
-                {t('crm.yesBestDesc')}
-              </p>
             </div>
           </div>
         )}

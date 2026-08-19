@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { GALLERY_ITEMS, TESTIMONIALS } from '../data';
+import { SERVICES, GALLERY_ITEMS, TESTIMONIALS } from '../data';
 import { 
   CheckCircle2, 
   Video, 
@@ -34,12 +34,15 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
   const { t, language } = useLanguage();
   const isEs = language === 'es';
 
+  // Get all unique procedures listed under services (same as ContactSection)
+  const allProcedures = SERVICES.flatMap(s => s.procedures);
+
   // Lead Form State
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
-    procedure: 'Liposuction HD & BBL',
+    procedure: '',
     travelTimeline: '1-3 Months',
     country: 'United States',
     notes: ''
@@ -73,7 +76,10 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName || !formData.phone) return;
+    if (!formData.fullName || !formData.phone || !formData.procedure) {
+      setSubmitError(language === 'es' ? 'Por favor complete todos los campos requeridos, incluyendo el procedimiento.' : 'Please complete all required fields, including procedure of interest.');
+      return;
+    }
 
     setIsSubmitting(true);
     setSubmitError(null);
@@ -773,16 +779,31 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
                         Procedure of Interest *
                       </label>
                       <select
+                        required
                         value={formData.procedure}
                         onChange={(e) => setFormData({ ...formData, procedure: e.target.value })}
-                        className="w-full px-4 py-3 bg-white border border-[#EBE6DF] focus:border-[#0373bb] rounded-xl text-xs sm:text-sm text-[#2D211A] outline-none transition-all font-medium"
+                        className="w-full px-4 py-3 bg-white border border-[#EBE6DF] focus:border-[#0373bb] rounded-xl text-xs sm:text-sm text-[#2D211A] outline-none transition-all font-medium cursor-pointer"
                       >
-                        <option value="Liposuction HD & BBL">Liposuction HD & BBL</option>
-                        <option value="Tummy Tuck / Abdominoplasty">Tummy Tuck / Abdominoplasty</option>
-                        <option value="Mommy Makeover Combo">Mommy Makeover Combo</option>
-                        <option value="Breast Augmentation / Lift">Breast Augmentation / Lift</option>
-                        <option value="Rhinoplasty / Facial Surgery">Rhinoplasty / Facial Surgery</option>
-                        <option value="Reconstructive Surgery">Reconstructive Surgery</option>
+                        <option value="">{language === 'es' ? 'Seleccionar tratamiento / cirugía' : 'Select treatment / surgery'}</option>
+                        {allProcedures.map((proc, idx) => {
+                          const procKey = `procedure.${proc.toLowerCase().replace(/\s+/g, '_')}`;
+                          const translatedProc = t(procKey) !== procKey ? t(procKey) : proc;
+                          return (
+                            <option key={idx} value={proc}>{translatedProc}</option>
+                          );
+                        })}
+                        <option value="Liposuction HD & BBL">
+                          {language === 'es' ? 'Lipoescultura HD con Transferencia Glútea (BBL)' : 'Liposuction HD & BBL (Brazilian Butt Lift)'}
+                        </option>
+                        <option value="Mommy Makeover Combo">
+                          {language === 'es' ? 'Mommy Makeover Combo (Abdominoplastia + Busto + Lipo)' : 'Mommy Makeover Combo (Tummy Tuck + Breast + Lipo)'}
+                        </option>
+                        <option value="Rhinoplasty / Facial Surgery">
+                          {language === 'es' ? 'Rinoplastia Ultrasónica / Cirugía Facial' : 'Rhinoplasty / Facial Aesthetics'}
+                        </option>
+                        <option value="Reconstructive Surgery">
+                          {language === 'es' ? 'Cirugía Reconstructiva Post-Bariátrica / Cicatrices' : 'Reconstructive & Post-Bariatric Surgery'}
+                        </option>
                       </select>
                     </div>
 

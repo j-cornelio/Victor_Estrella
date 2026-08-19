@@ -51,6 +51,7 @@ import {
   deletePatientFile,
   createDefaultPatientRecord
 } from '../lib/firestoreService';
+import { formatConversationalDate } from '../utils/dateFormatter';
 
 interface PatientDashboardProps {
   onClose: () => void;
@@ -929,8 +930,8 @@ export default function PatientDashboard({ onClose, onOpenConsultation, onLoginS
                           </div>
                         </div>
 
-                        <span className="text-xs font-mono font-bold text-slate-600 shrink-0 ml-2">
-                          {proc.date}
+                        <span className="text-xs font-semibold text-slate-600 shrink-0 ml-2">
+                          {formatConversationalDate(proc.date, language)}
                         </span>
                       </div>
                     ))}
@@ -1330,8 +1331,8 @@ export default function PatientDashboard({ onClose, onOpenConsultation, onLoginS
                           <h5 className="text-xs font-bold text-slate-900 truncate" title={file.name}>
                             {file.name}
                           </h5>
-                          <span className="text-[10px] text-slate-400 block font-mono">
-                            {file.uploadDate} • {Math.round(file.size / 1024)} KB • <span className="capitalize">{file.category.replace('_', ' ')}</span>
+                          <span className="text-[10px] text-slate-400 block font-medium">
+                            {formatConversationalDate(file.uploadDate, language)} • {Math.round(file.size / 1024)} KB • <span className="capitalize">{file.category.replace('_', ' ')}</span>
                           </span>
                           {file.notes && (
                             <p className="text-[11px] text-slate-600 mt-1 italic line-clamp-1">{file.notes}</p>

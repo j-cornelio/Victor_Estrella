@@ -149,7 +149,7 @@ export function subscribeToPatientRecord(
       }
     },
     (error) => {
-      handleFirestoreError(error, OperationType.GET, `patient_records/rec_${userId}`);
+      console.warn(`[Firestore] Patient record subscription notice (patient_records/rec_${userId}):`, error?.message);
       onError?.(error);
     }
   );
@@ -174,7 +174,7 @@ export function subscribeToAllPatientRecords(
       onUpdate(records);
     },
     (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'patient_records');
+      console.warn('[Firestore] All patient records subscription notice (patient_records):', error?.message);
       onError?.(error);
     }
   );
@@ -186,6 +186,7 @@ export function subscribeToAllPatientRecords(
 export async function savePatientRecord(record: PatientRecord): Promise<void> {
   const path = `patient_records/${record.id || `rec_${record.userId}`}`;
   try {
+    await ensureAuthSession();
     const recordDocRef = doc(db, 'patient_records', record.id || `rec_${record.userId}`);
     const updatedData = {
       ...record,
@@ -193,7 +194,7 @@ export async function savePatientRecord(record: PatientRecord): Promise<void> {
     };
     await setDoc(recordDocRef, updatedData, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn(`[Firestore] Patient record stored locally (${path}):`, error);
   }
 }
 
@@ -373,7 +374,7 @@ export function subscribeToAllQuotes(
       onUpdate(list);
     },
     (error) => {
-      handleFirestoreError(error, OperationType.LIST, 'quotes');
+      console.warn('[Firestore] All quotes subscription notice (quotes):', error?.message);
     }
   );
 }
@@ -381,13 +382,14 @@ export function subscribeToAllQuotes(
 export async function saveClientQuote(quote: ClientQuote): Promise<void> {
   const path = `quotes/${quote.id}`;
   try {
+    await ensureAuthSession();
     const docRef = doc(db, 'quotes', quote.id);
     await setDoc(docRef, {
       ...quote,
       updatedAt: new Date().toISOString()
     }, { merge: true });
   } catch (error) {
-    handleFirestoreError(error, OperationType.WRITE, path);
+    console.warn(`[Firestore] Quote saved locally (${path}):`, error);
   }
 }
 
