@@ -21,7 +21,7 @@ FROM node:20-alpine AS runtime
 WORKDIR /app
 
 ENV NODE_ENV=production
-ENV PORT=3000
+ENV PORT=80
 
 # Copy package files and install only production dependencies
 COPY package.json ./
@@ -30,8 +30,8 @@ RUN npm install --omit=dev
 # Copy compiled files from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Expose port
-EXPOSE 3000
+# Expose ports for Easypanel reverse proxy (port 80 default, 3000 secondary)
+EXPOSE 80 3000
 
 # Run the compiled, high-performance production server
 CMD ["node", "dist/server.cjs"]

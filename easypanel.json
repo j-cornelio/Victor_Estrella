@@ -12,14 +12,18 @@
           "type": "dockerfile",
           "dockerfile": "Dockerfile"
         },
-        "ports": [
+        "domains": [
           {
-            "publishedPort": 3000,
-            "targetPort": 3000,
-            "protocol": "tcp"
+            "host": "drestrellaplasticsurgeon.com",
+            "port": 80
+          },
+          {
+            "host": "crm.drestrellaplasticsurgeon.com",
+            "port": 80
           }
         ],
-        "env": "NODE_ENV=production\nPORT=3000"
+        "ports": [],
+        "env": "NODE_ENV=production\nPORT=80"
       }
     }
   ]

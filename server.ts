@@ -1,17 +1,18 @@
+import "dotenv/config";
 import express from "express";
 import path from "path";
 import fs from "fs";
-import { fileURLToPath } from "url";
-import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import compression from "compression";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Safely determine directory without any url/fileURLToPath or import.meta dependencies
+const serverDirname = typeof __dirname !== "undefined" ? __dirname : process.cwd();
 
 async function startServer() {
   const app = express();
-  const PORT = typeof process.env.PORT === "string" ? parseInt(process.env.PORT, 10) : 3000;
+  const PORT = typeof process.env.PORT === "string"
+    ? parseInt(process.env.PORT, 10)
+    : (process.env.NODE_ENV === "production" ? 80 : 3000);
 
   // Enable gzip / deflate compression on all responses (HTML, CSS, JS, JSON)
   app.use(compression());
@@ -1989,9 +1990,9 @@ GUIDELINES FOR CONVERSING WITH LEADS:
   function getDistDirectory(): string {
     const candidatePaths = [
       path.join(process.cwd(), "dist"),
-      __dirname,
-      path.join(__dirname, "dist"),
-      path.join(__dirname, "..", "dist"),
+      serverDirname,
+      path.join(serverDirname, "dist"),
+      path.join(serverDirname, "..", "dist"),
       process.cwd()
     ];
     for (const candidate of candidatePaths) {
@@ -2008,6 +2009,7 @@ GUIDELINES FOR CONVERSING WITH LEADS:
   const isProduction = process.env.NODE_ENV === "production" || (hasDistIndex && process.env.NODE_ENV !== "development");
 
   if (!isProduction) {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { 
         middlewareMode: true,
@@ -2057,9 +2059,24 @@ GUIDELINES FOR CONVERSING WITH LEADS:
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
+  const server = app.listen(PORT, "0.0.0.0", () => {
     console.log(`[Clinical Server] Booted up and running on host 0.0.0.0 port ${PORT}`);
   });
+
+  // In production, also bind secondary port (e.g. 3000 if PORT is 80, or 80 if PORT is 3000)
+  if (isProduction) {
+    const secondaryPort = Number(PORT) === 80 ? 3000 : 80;
+    try {
+      const fallbackServer = app.listen(secondaryPort, "0.0.0.0", () => {
+        console.log(`[Clinical Server] Secondary listener active on port ${secondaryPort} for reverse proxy routing`);
+      });
+      fallbackServer.on("error", (err: any) => {
+        console.log(`[Clinical Server] Note: Secondary port ${secondaryPort} listener skipped (${err?.message || err})`);
+      });
+    } catch {
+      // Ignored
+    }
+  }
 }
 
 startServer();
