@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { X, ClipboardCheck, AlertCircle, Info, Upload, Camera, FileText, Check, ShieldCheck, Calendar } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import { saveCrmLead, createConsultation } from '../lib/firestoreService';
+import { getEstimatedPriceForProcedure } from '../data';
 import { CrmLead } from './CrmPortal';
 
 interface FemaleEvaluationModalProps {
@@ -197,7 +198,7 @@ export default function FemaleEvaluationModal({ isOpen, onClose }: FemaleEvaluat
       riskCategory: riskLevel,
       bmi: personal.bmi || undefined,
       dateCreated: new Date().toISOString().split('T')[0],
-      estimatedValue: selectedProcedure.toLowerCase().includes('mommy') ? 8500 : selectedProcedure.toLowerCase().includes('lipo') ? 5500 : 4800,
+      estimatedValue: getEstimatedPriceForProcedure(selectedProcedure),
       notes: `[Evaluación Femenina] Residencia: ${personal.residence || 'N/A'}. Plazo: ${surgicalGoals.timeline}. Procedimiento: ${selectedProcedure}`,
       source: 'evaluation_modal',
       medicalSummary: {

@@ -68,8 +68,10 @@ export default function AboutSection() {
             <div className="absolute inset-0 bg-[#EBE6DF]/20 rounded-none translate-x-4 translate-y-4 -z-10" />
             <div className="relative rounded-none overflow-hidden border border-[#FCFBF9] shadow-xl bg-neutral-100 aspect-[3/4]">
               <img
-                src="https://res.cloudinary.com/dkicj8zmk/image/upload/v1784122805/vic_light_gray_bg_cr2ltw.png"
+                src="https://res.cloudinary.com/dkicj8zmk/image/upload/f_auto,q_auto,w_800/v1784122805/vic_light_gray_bg_cr2ltw.png"
                 alt="Dr. Victor Estrella, MD"
+                loading="lazy"
+                decoding="async"
                 className="w-full h-full object-cover hover:scale-102 transition-all duration-700 border border-white/10"
                 referrerPolicy="no-referrer"
               />

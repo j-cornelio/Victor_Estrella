@@ -293,9 +293,34 @@ export function subscribeToPatientConsultations(
   );
 }
 
+export async function fetchAllConsultations(): Promise<Consultation[]> {
+  try {
+    await ensureAuthSession();
+    const colRef = collection(db, 'consultations');
+    const querySnap = await getDocs(colRef);
+    const list: Consultation[] = [];
+    querySnap.forEach((d) => {
+      list.push({ id: d.id, ...d.data() } as Consultation);
+    });
+    return list;
+  } catch (err) {
+    console.warn('[Firestore] Error fetching consultations directly:', err);
+    return [];
+  }
+}
+
 export function subscribeToAllConsultations(
-  onUpdate: (consultations: Consultation[]) => void
+  onUpdate: (consultations: Consultation[]) => void,
+  onError?: (err: any) => void
 ) {
+  ensureAuthSession().then(() => {
+    fetchAllConsultations().then((initial) => {
+      if (initial && initial.length > 0) {
+        onUpdate(initial);
+      }
+    }).catch(() => {});
+  }).catch(() => {});
+
   const colRef = collection(db, 'consultations');
   return onSnapshot(
     colRef,
@@ -308,6 +333,7 @@ export function subscribeToAllConsultations(
     },
     (error) => {
       console.warn('[Firestore] Consultations list subscription notice:', error?.message);
+      onError?.(error);
     }
   );
 }
@@ -397,9 +423,35 @@ export async function saveClientQuote(quote: ClientQuote): Promise<void> {
 // CRM LEADS (Staff Management)
 // -------------------------------------------------------------
 
+export async function fetchAllCrmLeads(): Promise<CrmLead[]> {
+  try {
+    await ensureAuthSession();
+    const colRef = collection(db, 'leads');
+    const querySnap = await getDocs(colRef);
+    const list: CrmLead[] = [];
+    querySnap.forEach((d) => {
+      list.push({ id: d.id, ...d.data() } as CrmLead);
+    });
+    return list;
+  } catch (err) {
+    console.warn('[Firestore] Error fetching CRM leads directly:', err);
+    return [];
+  }
+}
+
 export function subscribeToCrmLeads(
-  onUpdate: (leads: CrmLead[]) => void
+  onUpdate: (leads: CrmLead[]) => void,
+  onError?: (error: any) => void
 ) {
+  // Ensure authenticated session before reading
+  ensureAuthSession().then(() => {
+    fetchAllCrmLeads().then((initialLeads) => {
+      if (initialLeads && initialLeads.length > 0) {
+        onUpdate(initialLeads);
+      }
+    }).catch(() => {});
+  }).catch(() => {});
+
   const colRef = collection(db, 'leads');
   return onSnapshot(
     colRef,
@@ -412,6 +464,7 @@ export function subscribeToCrmLeads(
     },
     (error) => {
       console.warn('[Firestore] CRM leads subscription notice:', error?.message);
+      onError?.(error);
     }
   );
 }

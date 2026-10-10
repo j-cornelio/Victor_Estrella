@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { SERVICES, GALLERY_ITEMS, TESTIMONIALS } from '../data';
+import { SERVICES, GALLERY_ITEMS, TESTIMONIALS, getEstimatedPriceForProcedure } from '../data';
 import { 
   CheckCircle2, 
   Video, 
@@ -93,12 +93,12 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
       email: formData.email || 'N/A',
       phone: formData.phone,
       procedure: formData.procedure,
-      status: 'evaluation',
+      status: 'new',
       riskCategory: 'low',
       dateCreated: new Date().toISOString().split('T')[0],
-      estimatedValue: formData.procedure.toLowerCase().includes('mommy') ? 7500 : formData.procedure.toLowerCase().includes('lipo') ? 5200 : 4500,
+      estimatedValue: getEstimatedPriceForProcedure(formData.procedure),
       notes: `[Timeline: ${formData.travelTimeline}] [Country: ${formData.country}] ${formData.notes}`,
-      source: 'evaluation_modal'
+      source: 'website_form'
     };
 
     // Save to Firestore leads collection
@@ -309,8 +309,10 @@ export default function InstagramLandingPage({ onClose, onOpenConsultation }: In
                 <div className="relative bg-white/10 backdrop-blur-md p-3 rounded-3xl border border-white/25 shadow-2xl overflow-hidden">
                   <div className="relative h-[380px] sm:h-[420px] rounded-2xl overflow-hidden bg-[#013d66]">
                     <img
-                      src="https://res.cloudinary.com/dkicj8zmk/image/upload/v1786987014/vic_in_scrubs_ncpzcv.jpg"
+                      src="https://res.cloudinary.com/dkicj8zmk/image/upload/f_auto,q_auto,w_800/v1786987014/vic_in_scrubs_ncpzcv.jpg"
                       alt="Dr. Victor Estrella Plastic Surgeon"
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-cover object-top"
                       referrerPolicy="no-referrer"
                     />

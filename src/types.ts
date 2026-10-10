@@ -188,3 +188,58 @@ export interface ClientQuote {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface ProcedurePricingItem {
+  id: string;
+  name: string; // Spanish procedure name
+  nameEn: string; // English procedure name
+  procedurePrice: number | null; // null if requires prior evaluation
+  procedurePriceRange?: { min: number; max: number };
+  medicalExpenses: number | null; // $1,100, $1,200, or null
+  estimatedTotal: number | null; // Total or null
+  estimatedTotalRange?: { min: number; max: number };
+  includesBreasts: boolean;
+  category: 'combo' | 'breast' | 'body' | 'other';
+  notes?: string;
+}
+
+export interface PricingAddon {
+  id: string;
+  name: string;
+  nameEn: string;
+  additionalCost: number;
+  description: string;
+}
+
+export interface ChatEvaluationResult {
+  zone: string;
+  goals: string[];
+  candidateLevel: 'ideal' | 'good' | 'requires_clearance';
+  bmi?: number;
+  recommendedProcedureIds: string[];
+  recoveryDays: number;
+  travelNotes: string;
+  rationale: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp: string;
+  suggestedProcedures?: string[];
+  evaluationResult?: ChatEvaluationResult;
+  bookingTrigger?: boolean;
+  appointmentConfirmed?: Consultation;
+}
+
+export interface ChatLeadContext {
+  name?: string;
+  email?: string;
+  phone?: string;
+  procedure?: string;
+  bmi?: number;
+  goals?: string[];
+  notes?: string;
+}
+

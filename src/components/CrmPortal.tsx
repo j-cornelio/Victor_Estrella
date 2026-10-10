@@ -11,7 +11,9 @@ import { PatientRecord, PatientFile, Consultation } from '../types';
 import { formatConversationalDate } from '../utils/dateFormatter';
 import { 
   subscribeToCrmLeads, 
+  fetchAllCrmLeads,
   subscribeToAllConsultations,
+  fetchAllConsultations,
   saveCrmLead, 
   subscribeToAllPatientRecords, 
   savePatientRecord,
@@ -33,7 +35,7 @@ export interface CrmLead {
   appointmentTime?: string;
   estimatedValue?: number;
   notes?: string;
-  source: 'website_form' | 'evaluation_modal' | 'whatsapp_direct' | 'manual';
+  source: 'website_form' | 'evaluation_modal' | 'whatsapp_direct' | 'manual' | 'chatbot';
   medicalSummary?: {
     age?: number;
     dob?: string;
@@ -53,14 +55,14 @@ const INITIAL_DEMO_LEADS: CrmLead[] = [
     patientName: 'María Fernanda Gómez',
     email: 'm.gomez@example.com',
     phone: '+1 809 555 0192',
-    procedure: 'Lipoescultura HD con Marcación',
+    procedure: 'Liposucción + BBL (Lipoescultura HD)',
     status: 'scheduled',
     riskCategory: 'low',
     bmi: 22.4,
     dateCreated: '2026-07-28',
     appointmentDate: '2026-08-05',
     appointmentTime: '10:00 AM',
-    estimatedValue: 4800,
+    estimatedValue: 5100,
     notes: 'Interesada en contorno abdominal y transferencia glútea. Paciente en excelente condición física.',
     source: 'evaluation_modal',
     medicalSummary: {
@@ -105,14 +107,14 @@ const INITIAL_DEMO_LEADS: CrmLead[] = [
     patientName: 'Aura Patricia Santos',
     email: 'aura.santos@example.com',
     phone: '+1 809 221 9088',
-    procedure: 'Mamoplastia de Aumento con Implantes',
+    procedure: 'Senos con Implantes (Aumento Mamario)',
     status: 'booked',
     riskCategory: 'moderate',
     bmi: 27.8,
     dateCreated: '2026-07-15',
     appointmentDate: '2026-08-12',
     appointmentTime: '09:00 AM',
-    estimatedValue: 4200,
+    estimatedValue: 6200,
     notes: 'Programada para cirugía en Pabellón CECIP. Requiere confirmación de laboratorios de coagulación.',
     source: 'whatsapp_direct',
     medicalSummary: {
@@ -143,10 +145,12 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
   const [authError, setAuthError] = useState(false);
 
   // Firestore CRM Leads state
-  const [leads, setLeads] = useState<CrmLead[]>(INITIAL_DEMO_LEADS);
+  const [leads, setLeads] = useState<CrmLead[]>([]);
   const [fsLeads, setFsLeads] = useState<CrmLead[]>([]);
   const [fsConsultations, setFsConsultations] = useState<Consultation[]>([]);
   const [isLiveConnected, setIsLiveConnected] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showDemoToggle, setShowDemoToggle] = useState(false);
 
   // Firestore Patient Records state (Staff management of patient files, payments, booking)
   const [patientRecords, setPatientRecords] = useState<PatientRecord[]>([]);
@@ -157,6 +161,29 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [riskFilter, setRiskFilter] = useState<string>('all');
   const [selectedLead, setSelectedLead] = useState<CrmLead | null>(null);
+
+  // Manual refresh function to fetch latest records directly from Firestore
+  const handleManualRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      const [fetchedLeads, fetchedCons] = await Promise.all([
+        fetchAllCrmLeads(),
+        fetchAllConsultations()
+      ]);
+      setFsLeads(fetchedLeads || []);
+      setFsConsultations(fetchedCons || []);
+      setIsLiveConnected(true);
+    } catch (err) {
+      console.warn('[CRM] Manual refresh error:', err);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
+  // Initial load on mount
+  useEffect(() => {
+    handleManualRefresh();
+  }, []);
 
   // New Lead Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -230,12 +257,30 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
 
     const combinedMap = new Map<string, CrmLead>();
     
-    // Add Firestore leads
-    fsLeads.forEach(l => {
-      combinedMap.set(l.id, l);
+    // Add Firestore leads with full null/undefined safety & normalization
+    fsLeads.forEach((rawLead: any) => {
+      if (!rawLead || !rawLead.id) return;
+      const normalizedLead: CrmLead = {
+        id: rawLead.id,
+        patientName: rawLead.patientName || rawLead.fullName || rawLead.name || 'Paciente',
+        email: rawLead.email || '',
+        phone: rawLead.phone || '',
+        procedure: rawLead.procedure || rawLead.surgery || 'Procedimiento a Evaluar',
+        status: rawLead.status || 'new',
+        riskCategory: rawLead.riskCategory || 'low',
+        bmi: typeof rawLead.bmi === 'number' ? rawLead.bmi : undefined,
+        dateCreated: rawLead.dateCreated || rawLead.createdAt?.split('T')[0] || new Date().toISOString().split('T')[0],
+        appointmentDate: rawLead.appointmentDate || rawLead.date || '',
+        appointmentTime: rawLead.appointmentTime || rawLead.time || '',
+        estimatedValue: typeof rawLead.estimatedValue === 'number' ? rawLead.estimatedValue : 5100,
+        notes: rawLead.notes || '',
+        source: rawLead.source || 'website_form',
+        medicalSummary: rawLead.medicalSummary
+      };
+      combinedMap.set(normalizedLead.id, normalizedLead);
     });
 
-    // Add Firestore consultations
+    // Add Firestore consultations (if not already represented by email)
     consultationLeads.forEach(cl => {
       if (!combinedMap.has(cl.id)) {
         const existing = Array.from(combinedMap.values()).find(
@@ -250,10 +295,12 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
     const realList = Array.from(combinedMap.values());
     if (realList.length > 0) {
       setLeads(realList);
-    } else {
+    } else if (showDemoToggle) {
       setLeads(INITIAL_DEMO_LEADS);
+    } else {
+      setLeads([]);
     }
-  }, [fsLeads, fsConsultations]);
+  }, [fsLeads, fsConsultations, showDemoToggle]);
 
   // Doctor PIN login handler
   const handlePinSubmit = (e: React.FormEvent) => {
@@ -317,14 +364,23 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
 
   // Filtered leads
   const filteredLeads = leads.filter(lead => {
-    const matchesSearch = 
-      lead.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.phone.includes(searchTerm) ||
-      lead.procedure.toLowerCase().includes(searchTerm.toLowerCase());
+    const searchLower = (searchTerm || '').trim().toLowerCase();
+    const pName = (lead.patientName || '').toLowerCase();
+    const pEmail = (lead.email || '').toLowerCase();
+    const pPhone = (lead.phone || '').toLowerCase();
+    const pProc = (lead.procedure || '').toLowerCase();
+
+    const matchesSearch = !searchLower || 
+      pName.includes(searchLower) ||
+      pEmail.includes(searchLower) ||
+      pPhone.includes(searchLower) ||
+      pProc.includes(searchLower);
     
-    const matchesStatus = statusFilter === 'all' || lead.status === statusFilter;
-    const matchesRisk = riskFilter === 'all' || lead.riskCategory === riskFilter;
+    const leadStatus = lead.status || 'new';
+    const matchesStatus = statusFilter === 'all' || leadStatus === statusFilter;
+
+    const leadRisk = lead.riskCategory || 'low';
+    const matchesRisk = riskFilter === 'all' || leadRisk === riskFilter;
 
     return matchesSearch && matchesStatus && matchesRisk;
   });
@@ -736,6 +792,16 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
                 </select>
 
                 <button
+                  onClick={handleManualRefresh}
+                  disabled={isRefreshing}
+                  className="px-3 py-2 bg-blue-50 hover:bg-blue-100 text-[#0373bb] border border-blue-200 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer disabled:opacity-60"
+                  title="Sincronizar con base de datos Firestore"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                  <span className="hidden sm:inline">{language === 'es' ? 'Recargar BD' : 'Sync DB'}</span>
+                </button>
+
+                <button
                   onClick={handleExportCsv}
                   className="px-3 py-2 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl text-xs font-bold flex items-center space-x-1.5 transition-all cursor-pointer"
                   title="Export to CSV"
@@ -747,28 +813,34 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
             </div>
 
             {/* Live Firestore Connection Status Banner */}
-            <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 bg-neutral-50 rounded-xl border border-neutral-200/80 text-[11px]">
+            <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2.5 bg-neutral-50 rounded-xl border border-neutral-200/80 text-[11px]">
               <div className="flex items-center space-x-2">
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                 </span>
                 <span className="font-semibold text-neutral-700">
-                  {language === 'es' ? 'Sincronización en Tiempo Real con Cloud Firestore' : 'Real-Time Sync with Cloud Firestore'}
+                  {language === 'es' ? 'Base de Datos Cloud Firestore (victor-plastic-surgery)' : 'Cloud Firestore Database (victor-plastic-surgery)'}
                 </span>
-                <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-full font-bold text-neutral-600">
-                  {fsLeads.length + fsConsultations.length > 0 
-                    ? `${fsLeads.length + fsConsultations.length} ${language === 'es' ? 'registros en vivo' : 'live records'}`
-                    : `${leads.length} ${language === 'es' ? 'registros' : 'records'}`}
+                <span className="px-2 py-0.5 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full font-bold">
+                  {fsLeads.length + fsConsultations.length} {language === 'es' ? 'documentos reales' : 'live docs'}
                 </span>
               </div>
 
-              {fsLeads.length + fsConsultations.length > 0 && (
-                <span className="text-emerald-700 font-medium flex items-center space-x-1">
+              <div className="flex items-center space-x-2">
+                {fsLeads.length + fsConsultations.length === 0 && (
+                  <button
+                    onClick={() => setShowDemoToggle(!showDemoToggle)}
+                    className="text-[11px] text-neutral-500 hover:text-neutral-800 underline cursor-pointer"
+                  >
+                    {showDemoToggle ? (language === 'es' ? 'Ocultar datos de prueba' : 'Hide demo data') : (language === 'es' ? 'Ver datos de prueba' : 'Show demo data')}
+                  </button>
+                )}
+                <span className="text-emerald-700 font-semibold flex items-center space-x-1">
                   <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>{language === 'es' ? 'Mostrando datos reales de Firestore' : 'Displaying live Firestore documents'}</span>
+                  <span>{language === 'es' ? 'Conexión Activa' : 'Live Sync Connected'}</span>
                 </span>
-              )}
+              </div>
             </div>
 
             {/* Leads Table */}
@@ -800,59 +872,101 @@ export default function CrmPortal({ onClose }: CrmPortalProps) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-neutral-100">
-                  {filteredLeads.map((lead) => (
-                    <tr 
-                      key={lead.id}
-                      onClick={() => setSelectedLead(lead)}
-                      className="hover:bg-neutral-50/80 transition-colors cursor-pointer"
-                    >
-                      <td className="p-3">
-                        <span className="font-bold text-neutral-900 block">{lead.patientName}</span>
-                        <span className="text-[11px] text-neutral-500">{lead.phone} • {lead.email}</span>
-                      </td>
-
-                      <td className="p-3 font-semibold text-neutral-800">
-                        {lead.procedure}
-                      </td>
-
-                      <td className="p-3">
-                        {getStatusBadge(lead.status)}
-                      </td>
-
-                      <td className="p-3">
-                        {getRiskBadge(lead.riskCategory)}
-                      </td>
-
-                      <td className="p-3 text-neutral-600 font-medium">
-                        {lead.appointmentDate 
-                          ? `${formatConversationalDate(lead.appointmentDate, language)}${lead.appointmentTime ? ` (${lead.appointmentTime})` : ''}` 
-                          : <span className="text-neutral-400 italic">{language === 'es' ? 'Por agendar' : 'Pending schedule'}</span>}
-                      </td>
-
-                      <td className="p-3 font-bold text-neutral-900">
-                        ${(lead.estimatedValue || 0).toLocaleString()} USD
-                      </td>
-
-                      <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
-                        <div className="flex items-center justify-end space-x-1.5">
-                          <button
-                            onClick={() => handleOpenWhatsApp(lead)}
-                            className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition-all"
-                            title="Chat WhatsApp"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setSelectedLead(lead)}
-                            className="p-1.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200 rounded-lg transition-all"
-                            title="View Details"
-                          >
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </button>
+                  {filteredLeads.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-12 text-center text-neutral-500">
+                        <div className="max-w-md mx-auto space-y-3">
+                          <div className="w-12 h-12 bg-neutral-100 text-neutral-400 rounded-2xl flex items-center justify-center mx-auto">
+                            <Users className="w-6 h-6" />
+                          </div>
+                          <p className="font-semibold text-neutral-800 text-sm">
+                            {language === 'es' ? 'No se encontraron registros en la base de datos' : 'No records found in database'}
+                          </p>
+                          <p className="text-xs text-neutral-400">
+                            {language === 'es' 
+                              ? 'Los pacientes que completen el formulario de Instagram o soliciten cita se guardarán aquí automáticamente.' 
+                              : 'Patients submitting inquiries from the Instagram landing page or booking forms will appear here in real-time.'}
+                          </p>
+                          <div className="pt-2 flex justify-center gap-2">
+                            <button
+                              onClick={handleManualRefresh}
+                              className="px-3 py-1.5 bg-[#0373bb] text-white text-xs font-semibold rounded-lg hover:bg-[#025a94] transition-all cursor-pointer flex items-center space-x-1.5"
+                            >
+                              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+                              <span>{language === 'es' ? 'Consultar Firestore' : 'Fetch from Firestore'}</span>
+                            </button>
+                            <button
+                              onClick={() => setShowDemoToggle(!showDemoToggle)}
+                              className="px-3 py-1.5 bg-neutral-100 text-neutral-700 text-xs font-semibold rounded-lg hover:bg-neutral-200 transition-all cursor-pointer"
+                            >
+                              {showDemoToggle ? 'Ocultar Demo' : 'Cargar Datos Demo'}
+                            </button>
+                          </div>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredLeads.map((lead) => (
+                      <tr 
+                        key={lead.id}
+                        onClick={() => setSelectedLead(lead)}
+                        className="hover:bg-neutral-50/80 transition-colors cursor-pointer"
+                      >
+                        <td className="p-3">
+                          <div className="flex items-center space-x-2">
+                            <span className="font-bold text-neutral-900">{lead.patientName}</span>
+                            {lead.id.startsWith('lead_ig_') && (
+                              <span className="px-1.5 py-0.5 bg-pink-50 text-pink-700 border border-pink-200 rounded text-[9px] font-bold">
+                                Instagram
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-neutral-500 block">{lead.phone} • {lead.email}</span>
+                        </td>
+
+                        <td className="p-3 font-semibold text-neutral-800">
+                          {lead.procedure}
+                        </td>
+
+                        <td className="p-3">
+                          {getStatusBadge(lead.status)}
+                        </td>
+
+                        <td className="p-3">
+                          {getRiskBadge(lead.riskCategory)}
+                        </td>
+
+                        <td className="p-3 text-neutral-600 font-medium">
+                          {lead.appointmentDate 
+                            ? `${formatConversationalDate(lead.appointmentDate, language)}${lead.appointmentTime ? ` (${lead.appointmentTime})` : ''}` 
+                            : <span className="text-neutral-400 italic">{language === 'es' ? 'Por agendar' : 'Pending schedule'}</span>}
+                        </td>
+
+                        <td className="p-3 font-bold text-neutral-900">
+                          ${(lead.estimatedValue || 0).toLocaleString()} USD
+                        </td>
+
+                        <td className="p-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end space-x-1.5">
+                            <button
+                              onClick={() => handleOpenWhatsApp(lead)}
+                              className="p-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 rounded-lg transition-all"
+                              title="Chat WhatsApp"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => setSelectedLead(lead)}
+                              className="p-1.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200 rounded-lg transition-all"
+                              title="View Details"
+                            >
+                              <ChevronRight className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

@@ -1,12 +1,13 @@
 import React from 'react';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 interface HeroProps {
   onOpenConsultation: () => void;
+  onOpenChatbot?: () => void;
 }
 
-export default function Hero({ onOpenConsultation }: HeroProps) {
+export default function Hero({ onOpenConsultation, onOpenChatbot }: HeroProps) {
   const { t } = useLanguage();
   return (
     <section id="hero" className="relative bg-[#0373bb] text-white overflow-hidden">
@@ -127,9 +128,10 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
       {/* Absolute Image for Desktop, spanning exactly from top to bottom of the blue background block */}
       <div className="hidden lg:flex absolute right-[6%] xl:right-[10%] bottom-0 top-0 w-[40%] items-end justify-center overflow-hidden pointer-events-none z-10">
         <img
-          src="https://res.cloudinary.com/dkicj8zmk/image/upload/v1784121483/model_transparent_foefx8.png"
+          src="https://res.cloudinary.com/dkicj8zmk/image/upload/f_auto,q_auto,w_1000/v1784121483/model_transparent_foefx8.png"
           alt="Model Transparent Lines"
           className="h-full w-auto object-contain object-bottom select-none relative z-10"
+          decoding="async"
           referrerPolicy="no-referrer"
         />
       </div>
@@ -156,25 +158,36 @@ export default function Hero({ onOpenConsultation }: HeroProps) {
               {t('hero.description')}
             </p>
 
-            <div className="pt-2">
+            <div className="pt-2 flex flex-col sm:flex-row items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <button
                 onClick={onOpenConsultation}
-                className="group flex items-center space-x-3 text-white text-xs sm:text-sm tracking-widest uppercase font-bold hover:text-cyan-200 transition-colors cursor-pointer"
+                className="w-full sm:w-auto group flex items-center justify-center space-x-3 text-white text-xs sm:text-sm tracking-widest uppercase font-bold hover:text-cyan-200 transition-colors cursor-pointer bg-white/10 hover:bg-white/15 px-5 py-3 rounded-full border border-white/20"
               >
                 <span>{t('hero.schedulenow')}</span>
-                <span className="bg-white/15 p-2 rounded-full group-hover:translate-x-1.5 transition-transform">
-                  <ArrowRight className="w-4 h-4" />
+                <span className="bg-white/15 p-1.5 rounded-full group-hover:translate-x-1.5 transition-transform">
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </span>
               </button>
+
+              {onOpenChatbot && (
+                <button
+                  onClick={onOpenChatbot}
+                  className="w-full sm:w-auto flex items-center justify-center space-x-2 text-cyan-200 hover:text-white text-xs sm:text-sm tracking-wider uppercase font-semibold transition-all cursor-pointer px-5 py-3 rounded-full bg-cyan-950/40 hover:bg-cyan-950/60 border border-cyan-400/40 shadow-xs"
+                >
+                  <Sparkles className="w-4 h-4 text-cyan-300 animate-pulse" />
+                  <span>{t('nav.about') === 'Acerca de' ? 'Asesora IA · Evalúa tu caso' : 'AI Concierge · Candidacy'}</span>
+                </button>
+              )}
             </div>
           </div>
 
           {/* Right Column (Mobile/Tablet Only): Model Transparent Lines Illustration */}
           <div className="flex lg:hidden justify-center items-end relative h-[450px] sm:h-[600px] overflow-hidden order-1 lg:order-2">
             <img
-              src="https://res.cloudinary.com/dkicj8zmk/image/upload/v1784121483/model_transparent_foefx8.png"
+              src="https://res.cloudinary.com/dkicj8zmk/image/upload/f_auto,q_auto,w_800/v1784121483/model_transparent_foefx8.png"
               alt="Model Transparent Lines"
               className="h-full w-auto max-w-full object-contain relative z-10 select-none border-2 border-cyan-300/60 lg:border-0 rounded-2xl"
+              decoding="async"
               referrerPolicy="no-referrer"
             />
           </div>

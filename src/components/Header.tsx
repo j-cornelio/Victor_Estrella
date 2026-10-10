@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Phone, Calendar, User, Search, Menu, X, ChevronDown, Check, LogOut, Facebook, Instagram, Lock } from 'lucide-react';
+import { Phone, Calendar, User, Search, Menu, X, ChevronDown, Check, LogOut, Facebook, Instagram, Lock, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import LanguageSelector from './LanguageSelector';
 
@@ -10,6 +10,7 @@ interface HeaderProps {
   onOpenAccount: () => void;
   onOpenPatientDashboard?: () => void;
   onOpenCrm?: () => void;
+  onOpenChatbot?: () => void;
   currentUser: { email: string; name: string } | null;
   onLogout: () => void;
 }
@@ -21,6 +22,7 @@ export default function Header({
   onOpenAccount,
   onOpenPatientDashboard,
   onOpenCrm,
+  onOpenChatbot,
   currentUser,
   onLogout
 }: HeaderProps) {
@@ -52,8 +54,11 @@ export default function Header({
           className="flex items-center space-x-3 text-left focus:outline-none group cursor-pointer"
         >
           <img
-            src="https://res.cloudinary.com/dkicj8zmk/image/upload/v1783810633/logo_blue_oejuto.png"
+            src="https://res.cloudinary.com/dkicj8zmk/image/upload/f_auto,q_auto,w_120/v1783810633/logo_blue_oejuto.png"
             alt="Dr. Victor Estrella Logo"
+            width={54}
+            height={54}
+            decoding="async"
             className="w-[46px] h-[46px] sm:w-[54px] sm:h-[54px] object-contain brightness-110 saturate-125"
             referrerPolicy="no-referrer"
           />

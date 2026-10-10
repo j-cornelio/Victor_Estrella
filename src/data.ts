@@ -1,4 +1,5 @@
-import { Product, Specialist, GalleryItem, Testimonial } from './types';
+import { Product, Specialist, GalleryItem, Testimonial, ProcedurePricingItem, PricingAddon } from './types';
+import { optimizeCloudinary } from './utils/imageOptimizer';
 
 export const SERVICES = [
   {
@@ -14,7 +15,7 @@ export const SERVICES = [
     title: 'Breast',
     description: 'Achieve your desired volume, lift, and symmetry with tailored breast procedures designed for natural contour.',
     procedures: ['Breast Augmentation', 'Breast Lift (Mastopexy)', 'Breast Reduction', 'Breast Reconstruction'],
-    image: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784141729/breasts_dyyjpb.png',
+    image: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784141729/breasts_dyyjpb.png', 800),
     details: 'Whether seeking to restore fullness lost after pregnancy or weight loss, reduce back discomfort, or reconstruct shape, our breast options deliver balanced, proportional, and beautifully customized profiles.'
   },
   {
@@ -40,7 +41,7 @@ export const SPECIALISTS: Specialist[] = [
     id: 'dr-estrella',
     name: 'Dr. Victor Estrella, MD',
     role: 'Board Certified Plastic, Reconstructive & Aesthetic Surgeon',
-    image: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1786987014/vic_in_scrubs_ncpzcv.jpg',
+    image: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1786987014/vic_in_scrubs_ncpzcv.jpg', 600),
     bio: 'Dr. Victor Estrella is a highly recognized plastic surgeon in Santo Domingo, specializing in high-definition liposculpture, advanced abdominoplasty, breast surgery, and facial rejuvenation with a focus on harmony and natural-looking beauty.',
     rating: 5
   },
@@ -186,47 +187,291 @@ export const GALLERY_ITEMS: GalleryItem[] = [
   {
     id: 'g3',
     title: 'Liposuction 360, BBL & Tummy Tuck',
-    before: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784308433/Liposuction_360_BBL_Tummy_Tuck_before_snwgjy.png',
-    after: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784308433/Liposuction_360_BBL_Tummy_Tuck_g8ikj7.png',
+    before: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784308433/Liposuction_360_BBL_Tummy_Tuck_before_snwgjy.png', 800),
+    after: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784308433/Liposuction_360_BBL_Tummy_Tuck_g8ikj7.png', 800),
     category: 'Body Contouring',
     objectFit: 'contain'
   },
   {
     id: 'g8',
     title: 'Liposuction, BBL & Breast Augmentation with Implants',
-    before: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784321692/Liposuction-BBL-Breast-lift-augmentation-implants-before_peva9k.png',
-    after: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784321692/Liposuction-BBL-Breast-lift-augmentation-implants-after_nazaor.png',
+    before: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784321692/Liposuction-BBL-Breast-lift-augmentation-implants-before_peva9k.png', 800),
+    after: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784321692/Liposuction-BBL-Breast-lift-augmentation-implants-after_nazaor.png', 800),
     category: 'Breast Aesthetics',
     objectFit: 'contain'
   },
   {
     id: 'g4',
     title: 'Thigh Lift (Cruroplasty)',
-    before: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784311240/Thigh_lift_before_mx7r3y.png',
-    after: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784311240/Thigh_lift_after_u38pee.png',
+    before: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784311240/Thigh_lift_before_mx7r3y.png', 800),
+    after: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784311240/Thigh_lift_after_u38pee.png', 800),
     category: 'Body Contouring'
   },
   {
     id: 'g5',
     title: 'Liposuction & BBL (Brazilian Butt Lift)',
-    before: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784310102/BBL_lipo_before_gdq6qm.png',
-    after: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784310102/BBL_lipo_after_f4bxjh.png',
+    before: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784310102/BBL_lipo_before_gdq6qm.png', 800),
+    after: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784310102/BBL_lipo_after_f4bxjh.png', 800),
     category: 'Body Contouring',
     objectFit: 'contain'
   },
   {
     id: 'g6',
     title: 'Liposuction 360, BBL & Tummy Tuck (Abdominoplasty)',
-    before: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784310571/Liposuction_360_BBL_TummyTuck_Abdominoplasty__after_g4uyuz.png',
-    after: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784310571/Liposuction_360_BBL_TummyTuck_Abdominoplasty__after_1_azfo3y.png',
+    before: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784310571/Liposuction_360_BBL_TummyTuck_Abdominoplasty__after_g4uyuz.png', 800),
+    after: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784310571/Liposuction_360_BBL_TummyTuck_Abdominoplasty__after_1_azfo3y.png', 800),
     category: 'Body Contouring'
   },
   {
     id: 'g7',
     title: 'Breast Reduction for Gigantomastia',
-    before: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784322015/Breast-reduction-gigantomastia-before_srwtot.png',
-    after: 'https://res.cloudinary.com/dkicj8zmk/image/upload/v1784322015/Breast_reduction_for_gigantomastia_after_blbd8q.png',
+    before: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784322015/Breast-reduction-gigantomastia-before_srwtot.png', 800),
+    after: optimizeCloudinary('https://res.cloudinary.com/dkicj8zmk/image/upload/v1784322015/Breast_reduction_for_gigantomastia_after_blbd8q.png', 800),
     category: 'Breast Aesthetics',
     objectFit: 'contain'
   }
 ];
+
+// ==========================================
+// LISTA OFICIAL DE PROCEDIMIENTOS Y PRECIOS
+// Precios aproximados en USD (Dr. Víctor Estrella)
+// ==========================================
+
+export const OFFICIAL_PRICE_LIST: ProcedurePricingItem[] = [
+  {
+    id: 'lipo_senos_implantes',
+    name: 'Liposucción + Senos con Implantes',
+    nameEn: 'Liposuction + Breasts with Implants',
+    procedurePrice: 6500,
+    medicalExpenses: 1200,
+    estimatedTotal: 7700,
+    includesBreasts: true,
+    category: 'combo'
+  },
+  {
+    id: 'lipo_senos_sin_implantes',
+    name: 'Liposucción + Senos sin Implantes',
+    nameEn: 'Liposuction + Breasts without Implants',
+    procedurePrice: 7000,
+    medicalExpenses: 1200,
+    estimatedTotal: 8200,
+    includesBreasts: true,
+    category: 'combo'
+  },
+  {
+    id: 'lipo_bbl',
+    name: 'Liposucción + BBL',
+    nameEn: 'Liposuction + BBL (Brazilian Butt Lift)',
+    procedurePrice: 4000,
+    medicalExpenses: 1100,
+    estimatedTotal: 5100,
+    includesBreasts: false,
+    category: 'body'
+  },
+  {
+    id: 'abdominoplastia_flancos',
+    name: 'Abdominoplastia + Liposucción de Flancos',
+    nameEn: 'Abdominoplasty + Flank Liposuction',
+    procedurePrice: null, // Consultar evaluación
+    medicalExpenses: 1100,
+    estimatedTotal: null, // Consultar evaluación
+    includesBreasts: false,
+    category: 'body',
+    notes: 'Consultar evaluación médica'
+  },
+  {
+    id: 'abdominoplastia_lipo360_bbl',
+    name: 'Abdominoplastia (Tummy Tuck) + Liposucción 360 + BBL',
+    nameEn: 'Tummy Tuck (Abdominoplasty) + Lipo 360 + BBL',
+    procedurePrice: 6000,
+    medicalExpenses: 1100,
+    estimatedTotal: 7100,
+    includesBreasts: false,
+    category: 'combo'
+  },
+  {
+    id: 'mommy_makeover_implantes',
+    name: 'Mommy Makeover (Tummy Tuck + Lipo 360 + BBL + Senos)',
+    nameEn: 'Mommy Makeover (Tummy Tuck + Lipo 360 + BBL + Breasts with Implants)',
+    procedurePrice: 8000,
+    medicalExpenses: 1200,
+    estimatedTotal: 9200,
+    includesBreasts: true,
+    category: 'combo'
+  },
+  {
+    id: 'mommy_makeover_sin_implantes',
+    name: 'Mommy Makeover sin Implantes',
+    nameEn: 'Mommy Makeover without Implants (Tummy Tuck + Lipo 360 + BBL + Breast Lift/Reduction)',
+    procedurePrice: 8900,
+    medicalExpenses: 1200,
+    estimatedTotal: 10100,
+    includesBreasts: true,
+    category: 'combo'
+  },
+  {
+    id: 'levantamiento_senos_sin_implantes',
+    name: 'Levantamiento de Senos sin Implantes',
+    nameEn: 'Breast Lift without Implants (Mastopexy)',
+    procedurePrice: 4000,
+    medicalExpenses: 1200,
+    estimatedTotal: 5200,
+    includesBreasts: true,
+    category: 'breast'
+  },
+  {
+    id: 'senos_con_implantes',
+    name: 'Senos con Implantes (Aumento Mamario)',
+    nameEn: 'Breast Augmentation with Implants',
+    procedurePrice: 5000,
+    medicalExpenses: 1200,
+    estimatedTotal: 6200,
+    includesBreasts: true,
+    category: 'breast'
+  },
+  {
+    id: 'reduccion_mamaria',
+    name: 'Reducción Mamaria',
+    nameEn: 'Breast Reduction (Reduction Mammoplasty)',
+    procedurePrice: 4500,
+    medicalExpenses: 1200,
+    estimatedTotal: 5700,
+    includesBreasts: true,
+    category: 'breast'
+  },
+  {
+    id: 'arm_lift',
+    name: 'Arm Lift (Braquioplastia)',
+    nameEn: 'Arm Lift (Brachioplasty)',
+    procedurePrice: 4000,
+    medicalExpenses: 1100,
+    estimatedTotal: 5100,
+    includesBreasts: false,
+    category: 'body'
+  },
+  {
+    id: 'senos_brazos_lipo_bbl_sin_implantes',
+    name: 'Senos + Brazos + Liposucción + BBL (sin implantes)',
+    nameEn: 'Breasts + Arms + Liposuction + BBL (without implants)',
+    procedurePrice: 8000,
+    medicalExpenses: 1200,
+    estimatedTotal: 9200,
+    includesBreasts: true,
+    category: 'combo'
+  },
+  {
+    id: 'cruroplastia',
+    name: 'Cruroplastia (Muslos Internos)',
+    nameEn: 'Thigh Lift / Cruroplasty (Inner Thighs)',
+    procedurePrice: 4500,
+    procedurePriceRange: { min: 4000, max: 5000 },
+    medicalExpenses: 1100,
+    estimatedTotal: 5600,
+    estimatedTotalRange: { min: 5100, max: 6100 },
+    includesBreasts: false,
+    category: 'body'
+  },
+  {
+    id: 'reparacion_ombligo',
+    name: 'Reparación de Ombligo',
+    nameEn: 'Belly Button Repair (Umbilicoplasty)',
+    procedurePrice: 1000,
+    medicalExpenses: null,
+    estimatedTotal: 1000,
+    includesBreasts: false,
+    category: 'other'
+  }
+];
+
+export const PRICING_ADDONS: PricingAddon[] = [
+  {
+    id: 'vaser',
+    name: 'Tecnología VASER Ultrasónica',
+    nameEn: 'VASER Ultrasound Technology',
+    additionalCost: 800,
+    description: 'Se suma al procedimiento. No es opcional en algunos casos, especialmente en pacientes con liposucciones previas o fibrosis.'
+  },
+  {
+    id: 'imc_mayor_35',
+    name: 'IMC mayor de 35 (Protocolo Alta Complejidad)',
+    nameEn: 'BMI greater than 35 (High Complexity Protocol)',
+    additionalCost: 800,
+    description: 'Se suma al procedimiento para protocolos de monitorización, anestesia extendida y seguridad clínica.'
+  }
+];
+
+export const PRICING_CONDITIONS = {
+  currency: 'USD',
+  medicalExpensesIncluded: 'Los gastos médicos incluyen: sangre, seguro, evaluaciones y analíticas.',
+  medicalExpensesDetails: '$1,100 para procedimientos sin cirugía de senos · $1,200 cuando el procedimiento incluye senos · Excepto donde se indique "No aplica".',
+  vaserNotice: 'VASER no es opcional en algunos casos, especialmente en pacientes con liposucciones previas o fibrosis.',
+  generalDisclaimer: 'Los precios pueden variar según evaluación médica, IMC y antecedentes quirúrgicos. Implantes no incluidos excepto donde se especifica.'
+};
+
+/**
+ * Helper to get the official estimated total USD price for any procedure string
+ */
+export function getEstimatedPriceForProcedure(procedureName: string): number {
+  if (!procedureName) return 4500;
+  
+  const normalized = procedureName.toLowerCase();
+  
+  // 1. Check exact or close matches in OFFICIAL_PRICE_LIST
+  if (normalized.includes('mommy') && (normalized.includes('sin implante') || normalized.includes('without implant'))) {
+    return 10100;
+  }
+  if (normalized.includes('mommy')) {
+    return 9200;
+  }
+  if (normalized.includes('brazos') && normalized.includes('senos') && normalized.includes('lipo')) {
+    return 9200;
+  }
+  if (normalized.includes('lipo') && (normalized.includes('sin implante') || normalized.includes('without implant'))) {
+    return 8200;
+  }
+  if (normalized.includes('lipo') && normalized.includes('seno') && (normalized.includes('implante') || normalized.includes('implant'))) {
+    return 7700;
+  }
+  if ((normalized.includes('tummy') || normalized.includes('abdomino')) && normalized.includes('360') && normalized.includes('bbl')) {
+    return 7100;
+  }
+  if (normalized.includes('aumento mamario') || (normalized.includes('breast') && normalized.includes('augmentation')) || normalized.includes('senos con implante')) {
+    return 6200;
+  }
+  if (normalized.includes('reducción mamaria') || normalized.includes('breast reduction')) {
+    return 5700;
+  }
+  if (normalized.includes('cruroplastia') || normalized.includes('thigh lift') || normalized.includes('muslos')) {
+    return 5600;
+  }
+  if (normalized.includes('levantamiento de seno') || normalized.includes('mastopexy') || normalized.includes('breast lift')) {
+    return 5200;
+  }
+  if (normalized.includes('braquioplastia') || normalized.includes('arm lift')) {
+    return 5100;
+  }
+  if (normalized.includes('bbl') || normalized.includes('lipoescultura') || normalized.includes('liposuction')) {
+    return 5100;
+  }
+  if (normalized.includes('ombligo') || normalized.includes('belly button') || normalized.includes('umbilico')) {
+    return 1000;
+  }
+  if (normalized.includes('abdominoplastia') || normalized.includes('tummy tuck')) {
+    return 6000;
+  }
+  if (normalized.includes('rinoplastia') || normalized.includes('rhinoplasty')) {
+    return 3500;
+  }
+  if (normalized.includes('blefaro') || normalized.includes('eyelid')) {
+    return 2200;
+  }
+  if (normalized.includes('bichectom') || normalized.includes('buccal')) {
+    return 1800;
+  }
+  if (normalized.includes('botox') || normalized.includes('filler') || normalized.includes('peel') || normalized.includes('microneedling')) {
+    return 650;
+  }
+
+  return 5100; // Default reasonable baseline
+}
+

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import AboutSection from './components/AboutSection';
@@ -7,13 +8,16 @@ import GallerySection from './components/GallerySection';
 import TestimonialsSection from './components/TestimonialsSection';
 import ContactSection from './components/ContactSection';
 import Footer from './components/Footer';
-import AccountModal from './components/AccountModal';
-import ProceduresPage from './components/ProceduresPage';
-import CrmPortal from './components/CrmPortal';
-import InstagramLandingPage from './components/InstagramLandingPage';
-import PatientDashboard from './components/PatientDashboard';
 import { Product, Order, Consultation } from './types';
-import { Sparkles, X, Check } from 'lucide-react';
+import { Sparkles, X, Check, Loader2 } from 'lucide-react';
+
+// Code-split secondary views, CRM portal, Instagram landing, and modals to minimize initial bundle
+const AccountModal = React.lazy(() => import('./components/AccountModal'));
+const ProceduresPage = React.lazy(() => import('./components/ProceduresPage'));
+const CrmPortal = React.lazy(() => import('./components/CrmPortal'));
+const InstagramLandingPage = React.lazy(() => import('./components/InstagramLandingPage'));
+const PatientDashboard = React.lazy(() => import('./components/PatientDashboard'));
+const AIAestheticChatbot = React.lazy(() => import('./components/AIAestheticChatbot'));
 
 export default function App() {
   const [activeSection, setActiveSection] = useState('hero');
@@ -21,6 +25,7 @@ export default function App() {
 
   // Modal open states
   const [isAccountOpen, setIsAccountOpen] = useState(false);
+  const [isChatbotOpen, setIsChatbotOpen] = useState(false);
   
   // Consultation form pre-select parameters
   const [preselectedSpecialistId, setPreselectedSpecialistId] = useState('');
@@ -241,72 +246,96 @@ export default function App() {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
         onOpenCrm={() => setCurrentPage('crm')}
+        onOpenChatbot={() => setIsChatbotOpen(true)}
         currentUser={currentUser}
         onLogout={handleLogout}
       />
 
-      {currentPage === 'patient-dashboard' ? (
-        <PatientDashboard
-          onClose={() => setCurrentPage('home')}
-          onOpenConsultation={handleOpenConsultation}
-          onLoginSuccess={(email, name) => handleLogin(email, name)}
-        />
-      ) : currentPage === 'crm' ? (
-        <CrmPortal onClose={() => setCurrentPage('home')} />
-      ) : currentPage === 'landing' ? (
-        <InstagramLandingPage
-          onClose={() => setCurrentPage('home')}
-          onOpenConsultation={handleOpenConsultation}
-        />
-      ) : currentPage === 'procedures' ? (
-        <ProceduresPage
-          onClose={() => setCurrentPage('home')}
-          onOpenConsultation={handleOpenConsultation}
-          initialCategory={initialCategory}
-          initialProcedureId={initialProcedureId}
-        />
-      ) : currentPage === 'gallery' ? (
-        <GallerySection
-          isPageMode={true}
-          onClose={() => setCurrentPage('home')}
-        />
-      ) : (
-        /* Main Single Screen Layout Contents */
-        <main className="flex-1">
-          
-          {/* 1. Hero Section (Image 2 style with 'model transparent lines' Image 3/4) */}
-          <Hero onOpenConsultation={() => handleOpenConsultation()} />
+      <React.Suspense fallback={
+        <div className="flex-1 min-h-[60vh] flex items-center justify-center">
+          <div className="flex items-center space-x-3 text-[#0373bb]">
+            <Loader2 className="w-6 h-6 animate-spin" />
+            <span className="font-serif text-sm tracking-widest uppercase">Cargando...</span>
+          </div>
+        </div>
+      }>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={currentPage}
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -6 }}
+            transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
+            className="flex-1 flex flex-col w-full"
+          >
+            {currentPage === 'patient-dashboard' ? (
+              <PatientDashboard
+                onClose={() => setCurrentPage('home')}
+                onOpenConsultation={handleOpenConsultation}
+                onLoginSuccess={(email, name) => handleLogin(email, name)}
+              />
+            ) : currentPage === 'crm' ? (
+              <CrmPortal onClose={() => setCurrentPage('home')} />
+            ) : currentPage === 'landing' ? (
+              <InstagramLandingPage
+                onClose={() => setCurrentPage('home')}
+                onOpenConsultation={handleOpenConsultation}
+              />
+            ) : currentPage === 'procedures' ? (
+              <ProceduresPage
+                onClose={() => setCurrentPage('home')}
+                onOpenConsultation={handleOpenConsultation}
+                initialCategory={initialCategory}
+                initialProcedureId={initialProcedureId}
+              />
+            ) : currentPage === 'gallery' ? (
+              <GallerySection
+                isPageMode={true}
+                onClose={() => setCurrentPage('home')}
+              />
+            ) : (
+              /* Main Single Screen Layout Contents */
+              <main className="flex-1">
+                
+                {/* 1. Hero Section (Image 2 style with 'model transparent lines' Image 3/4) */}
+                <Hero 
+                  onOpenConsultation={() => handleOpenConsultation()} 
+                  onOpenChatbot={() => setIsChatbotOpen(true)}
+                />
 
-          {/* About Section (Aesthetic Surgery of Dr. Victor Estrella) */}
-          <AboutSection />
+                {/* About Section (Aesthetic Surgery of Dr. Victor Estrella) */}
+                <AboutSection />
 
-          {/* 2. Services Section (Image 5 content styled like clean Image 2 layout) */}
-          <ServicesSection
-            onOpenConsultation={handleOpenConsultation}
-            onNavigateToProcedures={handleNavigateToProcedures}
-          />
+                {/* 2. Services Section (Image 5 content styled like clean Image 2 layout) */}
+                <ServicesSection
+                  onOpenConsultation={handleOpenConsultation}
+                  onNavigateToProcedures={handleNavigateToProcedures}
+                />
 
-          {/* 5. Before & After Cases Gallery (Image 7 interactive comparisons) */}
-          <GallerySection
-            isPageMode={false}
-            onNavigateToGallery={() => {
-              setCurrentPage('gallery');
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-          />
+                {/* 5. Before & After Cases Gallery (Image 7 interactive comparisons) */}
+                <GallerySection
+                  isPageMode={false}
+                  onNavigateToGallery={() => {
+                    setCurrentPage('gallery');
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                />
 
-          {/* 6. Testimonials Section (Image 5 stars styled in clean Image 2 layout) */}
-          <TestimonialsSection />
+                {/* 6. Testimonials Section (Image 5 stars styled in clean Image 2 layout) */}
+                <TestimonialsSection />
 
-          {/* 7. Contact Us & Consultation Scheduler (Image 8 forms) */}
-          <ContactSection
-            preselectedSpecialistId={preselectedSpecialistId}
-            preselectedProcedure={preselectedProcedure}
-            onSuccess={handleSuccessConsultation}
-          />
+                {/* 7. Contact Us & Consultation Scheduler (Image 8 forms) */}
+                <ContactSection
+                  preselectedSpecialistId={preselectedSpecialistId}
+                  preselectedProcedure={preselectedProcedure}
+                  onSuccess={handleSuccessConsultation}
+                />
 
-        </main>
-      )}
+              </main>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </React.Suspense>
 
       {/* Responsive Multi-Column Footer (Image 9 columns) */}
       <Footer 
@@ -315,21 +344,35 @@ export default function App() {
           setCurrentPage('patient-dashboard');
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+        onOpenChatbot={() => setIsChatbotOpen(true)}
       />
 
       {/* My Account / Client Cabinet Portal modal */}
-      <AccountModal
-        isOpen={isAccountOpen}
-        onClose={() => setIsAccountOpen(false)}
-        currentUser={currentUser}
-        onLogin={handleLogin}
-        onLogout={handleLogout}
-        onOpenDashboard={() => {
-          setIsAccountOpen(false);
-          setCurrentPage('patient-dashboard');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-      />
+      <React.Suspense fallback={null}>
+        {isAccountOpen && (
+          <AccountModal
+            isOpen={isAccountOpen}
+            onClose={() => setIsAccountOpen(false)}
+            currentUser={currentUser}
+            onLogin={handleLogin}
+            onLogout={handleLogout}
+            onOpenDashboard={() => {
+              setIsAccountOpen(false);
+              setCurrentPage('patient-dashboard');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        )}
+      </React.Suspense>
+
+      {/* Aura Clinical Aesthetic AI Chatbot & Lead Evaluation Assistant */}
+      <React.Suspense fallback={null}>
+        <AIAestheticChatbot
+          isOpenExternal={isChatbotOpen}
+          onCloseExternal={() => setIsChatbotOpen(false)}
+          onOpenConsultationDirect={(proc) => handleOpenConsultation(undefined, proc)}
+        />
+      </React.Suspense>
 
     </div>
   );

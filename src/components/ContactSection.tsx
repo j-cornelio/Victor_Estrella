@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
-import { SPECIALISTS, SERVICES } from '../data';
+import { SPECIALISTS, SERVICES, getEstimatedPriceForProcedure } from '../data';
 import { Consultation } from '../types';
 import { MapPin, Phone, Mail, Calendar, CheckCircle, FileText, ClipboardCheck } from 'lucide-react';
 import FemaleEvaluationModal from './FemaleEvaluationModal';
@@ -226,7 +226,7 @@ export default function ContactSection({
         dateCreated: new Date().toISOString().split('T')[0],
         appointmentDate: formData.date,
         appointmentTime: formData.time,
-        estimatedValue: 4500,
+        estimatedValue: getEstimatedPriceForProcedure(formData.procedure),
         notes: formData.notes,
         source: 'website_form'
       }).catch(err => console.warn('[Contact] Firestore lead write warning:', err));

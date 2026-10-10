@@ -1,13 +1,14 @@
 import React from 'react';
-import { Mail, Phone, MapPin, Facebook, Instagram, Youtube, HelpCircle, ShieldCheck, User, ArrowRight, Lock } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Instagram, Youtube, HelpCircle, ShieldCheck, User, ArrowRight, Lock, Sparkles } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 
 interface FooterProps {
   onNavToSection: (sectionId: string) => void;
   onOpenAccount?: () => void;
+  onOpenChatbot?: () => void;
 }
 
-export default function Footer({ onNavToSection, onOpenAccount }: FooterProps) {
+export default function Footer({ onNavToSection, onOpenAccount, onOpenChatbot }: FooterProps) {
   const { language } = useLanguage();
   const currentYear = new Date().getFullYear();
 
@@ -19,7 +20,7 @@ export default function Footer({ onNavToSection, onOpenAccount }: FooterProps) {
     <footer className="bg-[#e3e4e7] border-t border-[#EBE6DF] text-[#2D211A] py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         
-        {/* Patient Care Portal Highlight Banner in Footer */}
+        {/* Patient Care Portal & Virtual Assistant Banner in Footer */}
         <div className="mb-12 bg-white rounded-2xl p-6 sm:p-8 border border-neutral-300 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
           <div className="flex items-start space-x-4">
             <div className="w-12 h-12 rounded-xl bg-[#0373bb]/10 border border-[#0373bb]/20 flex items-center justify-center text-[#0373bb] shrink-0">
@@ -40,17 +41,31 @@ export default function Footer({ onNavToSection, onOpenAccount }: FooterProps) {
             </div>
           </div>
           
-          {onOpenAccount && (
-            <button
-              onClick={onOpenAccount}
-              id="footer-patient-portal-btn"
-              className="w-full md:w-auto inline-flex items-center justify-center space-x-2 bg-[#0373bb] hover:bg-[#025c96] text-white px-6 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-98 cursor-pointer shrink-0"
-            >
-              <User className="w-4 h-4 text-cyan-200" />
-              <span>{language === 'es' ? 'Ingresar al Portal de Pacientes' : 'Enter Patient Portal'}</span>
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          )}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full md:w-auto shrink-0">
+            {onOpenChatbot && (
+              <button
+                onClick={onOpenChatbot}
+                id="footer-aura-chat-btn"
+                className="inline-flex items-center justify-center space-x-2 bg-gradient-to-r from-[#025c96] to-[#0373bb] hover:from-[#014775] hover:to-[#025c96] text-white px-5 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-cyan-500/20 transition-all active:scale-98 cursor-pointer shrink-0"
+                title="Chatear con Aura, Asesora Clínica IA"
+              >
+                <Sparkles className="w-4 h-4 text-cyan-200 animate-pulse" />
+                <span>{language === 'es' ? 'Aura IA (Asesora Virtual)' : 'Aura AI (Virtual Advisor)'}</span>
+              </button>
+            )}
+
+            {onOpenAccount && (
+              <button
+                onClick={onOpenAccount}
+                id="footer-patient-portal-btn"
+                className="inline-flex items-center justify-center space-x-2 bg-[#2D211A] hover:bg-[#3f2f25] text-white px-6 py-3.5 rounded-full text-xs font-bold uppercase tracking-wider shadow-md hover:shadow-lg transition-all active:scale-98 cursor-pointer shrink-0"
+              >
+                <User className="w-4 h-4 text-cyan-200" />
+                <span>{language === 'es' ? 'Ingresar al Portal de Pacientes' : 'Enter Patient Portal'}</span>
+                <ArrowRight className="w-4 h-4" />
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-left">
@@ -133,6 +148,12 @@ export default function Footer({ onNavToSection, onOpenAccount }: FooterProps) {
                     <span>Patient Portal / Login</span>
                   </button>
                 )}
+                {onOpenChatbot && (
+                  <button onClick={onOpenChatbot} className="text-[#0373bb] font-bold hover:underline transition-all cursor-pointer flex items-center space-x-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-cyan-600 animate-pulse" />
+                    <span>{language === 'es' ? 'Aura IA (Asesora Virtual)' : 'Aura AI (Virtual Advisor)'}</span>
+                  </button>
+                )}
               </li>
             </ul>
           </div>
@@ -166,6 +187,12 @@ export default function Footer({ onNavToSection, onOpenAccount }: FooterProps) {
               <button onClick={onOpenAccount} className="text-[#0373bb] font-bold hover:underline cursor-pointer flex items-center space-x-1">
                 <User className="w-3.5 h-3.5" />
                 <span>Patient Portal</span>
+              </button>
+            )}
+            {onOpenChatbot && (
+              <button onClick={onOpenChatbot} className="text-[#0373bb] font-bold hover:underline cursor-pointer flex items-center space-x-1">
+                <Sparkles className="w-3.5 h-3.5 text-cyan-600" />
+                <span>Aura IA</span>
               </button>
             )}
             <button onClick={() => handleNav('landing')} className="text-[#0373bb] font-bold hover:underline cursor-pointer">Landing Page</button>

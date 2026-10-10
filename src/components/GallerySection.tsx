@@ -140,6 +140,8 @@ export default function GallerySection({
                       <img
                         src={item.before}
                         alt="Before treatment"
+                        loading="lazy"
+                        decoding="async"
                         className={`w-full h-full ${item.objectFit === 'contain' ? 'object-contain bg-white' : 'object-cover'}`}
                         referrerPolicy="no-referrer"
                       />
@@ -153,6 +155,8 @@ export default function GallerySection({
                       <img
                         src={item.after}
                         alt="After treatment"
+                        loading="lazy"
+                        decoding="async"
                         className={`absolute inset-0 w-full h-full ${item.objectFit === 'contain' ? 'object-contain bg-white' : 'object-cover'}`}
                         referrerPolicy="no-referrer"
                         style={{ width: '100%', height: '100%' }}

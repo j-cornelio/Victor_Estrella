@@ -1,11 +1,20 @@
 import express from "express";
 import path from "path";
 import fs from "fs";
+import { fileURLToPath } from "url";
 import { createServer as createViteServer } from "vite";
+import { GoogleGenAI } from "@google/genai";
+import compression from "compression";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 async function startServer() {
   const app = express();
   const PORT = typeof process.env.PORT === "string" ? parseInt(process.env.PORT, 10) : 3000;
+
+  // Enable gzip / deflate compression on all responses (HTML, CSS, JS, JSON)
+  app.use(compression());
 
   // Health check and api endpoints for hosting/deployment verification
   app.get("/health", (_req, res) => {
@@ -1453,6 +1462,529 @@ Number of Attached Photos: ${attachments.length}
     }
   });
 
+  // =========================================================================
+  // AI CLINICAL CONCIERGE & LEAD EVALUATION CHATBOT (Powered by Gemini API)
+  // =========================================================================
+
+  let genAIClient: GoogleGenAI | null = null;
+  function getGenAI(): GoogleGenAI | null {
+    if (!process.env.GEMINI_API_KEY) {
+      return null;
+    }
+    if (!genAIClient) {
+      genAIClient = new GoogleGenAI({
+        apiKey: process.env.GEMINI_API_KEY,
+        httpOptions: {
+          headers: {
+            'User-Agent': 'aistudio-build'
+          }
+        }
+      });
+    }
+    return genAIClient;
+  }
+
+  // Clinical procedures master catalog for the AI Assistant
+  const PROCEDURES_CATALOG = [
+    {
+      id: "lipo_bbl",
+      name: "Liposucción 360° + BBL (Transferencia Glútea)",
+      nameEn: "Liposuction 360° + BBL (Brazilian Butt Lift)",
+      price: 5100,
+      medicalExpenses: 1100,
+      recovery: "10-14 días en República Dominicana",
+      category: "body",
+      desc: "Esculpe cintura, abdomen, flancos y espalda con lipotransferencia glútea armónica y natural."
+    },
+    {
+      id: "abdominoplastia_lipo360_bbl",
+      name: "Abdominoplastia (Tummy Tuck) + Liposucción 360 + BBL",
+      nameEn: "Tummy Tuck (Abdominoplasty) + Lipo 360 + BBL",
+      price: 7100,
+      medicalExpenses: 1100,
+      recovery: "12-14 días en República Dominicana",
+      category: "combo",
+      desc: "Repara la diástasis muscular, retira el exceso de piel flácida del abdomen y define el contorno corporal con BBL."
+    },
+    {
+      id: "mommy_makeover_implantes",
+      name: "Mommy Makeover con Implantes",
+      nameEn: "Mommy Makeover with Breast Implants",
+      price: 9200,
+      medicalExpenses: 1200,
+      recovery: "14 días en República Dominicana",
+      category: "combo",
+      desc: "Transformación integral post-embarazo: Abdominoplastia + Lipo 360 + BBL + Aumento de Senos con Implantes."
+    },
+    {
+      id: "mommy_makeover_sin_implantes",
+      name: "Mommy Makeover sin Implantes (Levantamiento/Reducción)",
+      nameEn: "Mommy Makeover without Implants (Lift / Reduction)",
+      price: 10100,
+      medicalExpenses: 1200,
+      recovery: "14 días en República Dominicana",
+      category: "combo",
+      desc: "Abdominoplastia + Lipo 360 + BBL + Mastopexia (Levantamiento de senos con tejido propio)."
+    },
+    {
+      id: "senos_con_implantes",
+      name: "Senos con Implantes (Aumento Mamario)",
+      nameEn: "Breast Augmentation with Implants",
+      price: 6200,
+      medicalExpenses: 1200,
+      recovery: "7-10 días en República Dominicana",
+      category: "breast",
+      desc: "Aumento de volumen, proyección y simetría mamaria con prótesis de silicona de grado médico de alta cohesividad."
+    },
+    {
+      id: "levantamiento_senos_sin_implantes",
+      name: "Levantamiento de Senos sin Implantes (Mastopexia)",
+      nameEn: "Breast Lift without Implants (Mastopexy)",
+      price: 5200,
+      medicalExpenses: 1200,
+      recovery: "8-10 días en República Dominicana",
+      category: "breast",
+      desc: "Reposiciona el tejido mamario caído, mejora la firmeza y remodela la areola sin necesidad de prótesis sintéticas."
+    },
+    {
+      id: "reduccion_mamaria",
+      name: "Reducción Mamaria (Mamoplastia de Reducción)",
+      nameEn: "Breast Reduction Mammoplasty",
+      price: 5700,
+      medicalExpenses: 1200,
+      recovery: "8-12 días en República Dominicana",
+      category: "breast",
+      desc: "Reduce el volumen y peso excesivo de los senos, aliviando dolores de espalda y hombros con un escote juvenil."
+    },
+    {
+      id: "lipo_senos_implantes",
+      name: "Liposucción + Senos con Implantes",
+      nameEn: "Liposuction + Breasts with Implants",
+      price: 7700,
+      medicalExpenses: 1200,
+      recovery: "10-12 días en República Dominicana",
+      category: "combo",
+      desc: "Contorno corporal mediante lipoescultura combinada con aumento mamario."
+    },
+    {
+      id: "lipo_senos_sin_implantes",
+      name: "Liposucción + Senos sin Implantes",
+      nameEn: "Liposuction + Breasts without Implants",
+      price: 8200,
+      medicalExpenses: 1200,
+      recovery: "10-12 días en República Dominicana",
+      category: "combo",
+      desc: "Lipoescultura corporal combinada con levantamiento o reducción mamaria sin prótesis."
+    },
+    {
+      id: "arm_lift",
+      name: "Arm Lift (Braquioplastia)",
+      nameEn: "Arm Lift (Brachioplasty)",
+      price: 5100,
+      medicalExpenses: 1100,
+      recovery: "10-12 días en República Dominicana",
+      category: "body",
+      desc: "Elimina la piel colgante y grasa acumulada en la cara interna de los brazos."
+    },
+    {
+      id: "cruroplastia",
+      name: "Cruroplastia (Lifting de Muslos)",
+      nameEn: "Thigh Lift (Cruroplasty)",
+      price: 5600,
+      medicalExpenses: 1100,
+      recovery: "12-14 días en República Dominicana",
+      category: "body",
+      desc: "Retira el exceso de piel en la entrepierna y tensa los muslos tras pérdida de peso."
+    },
+    {
+      id: "reparacion_ombligo",
+      name: "Reparación de Ombligo (Umbilicoplastia)",
+      nameEn: "Belly Button Repair (Umbilicoplasty)",
+      price: 1000,
+      medicalExpenses: null,
+      recovery: "3-5 días",
+      category: "other",
+      desc: "Corrección de hernias umbilicales leves o remodelación de la forma del ombligo."
+    }
+  ];
+
+  // Helper heuristic generator for when Gemini API key is missing or encounters network timeouts
+  function generateHeuristicResponse(lastUserMessage: string, lang: string = 'es') {
+    const text = (lastUserMessage || '').toLowerCase();
+    const isEn = lang === 'en';
+
+    // 1. Booking intent
+    if (
+      text.includes('agendar') ||
+      text.includes('cita') ||
+      text.includes('consulta') ||
+      text.includes('book') ||
+      text.includes('appointment') ||
+      text.includes('schedule') ||
+      text.includes('fecha')
+    ) {
+      return {
+        reply: isEn
+          ? "I'd be delighted to coordinate your consultation with Dr. Víctor Estrella! You can choose between a Virtual Video Consultation (ideal if traveling from the US, Canada, or abroad) or an In-Person Consultation at our clinic in Santo Domingo. Please select your preferred date and time on the booking card below:"
+          : "¡Con mucho gusto te coordino una cita médica con el Dr. Víctor Estrella! Puedes optar por una Consulta Virtual por Videollamada (ideal si viajas desde el exterior) o Consulta Presencial en nuestra clínica en Santo Domingo. Por favor selecciona tu fecha y horario preferido en el formulario a continuación:",
+        suggestedProcedures: ["lipo_bbl", "abdominoplastia_lipo360_bbl", "mommy_makeover_implantes"],
+        bookingIntent: true
+      };
+    }
+
+    // 2. Pricing inquiries
+    if (
+      text.includes('precio') ||
+      text.includes('costo') ||
+      text.includes('cuanto') ||
+      text.includes('cuánto') ||
+      text.includes('price') ||
+      text.includes('cost') ||
+      text.includes('rates') ||
+      text.includes('presupuesto')
+    ) {
+      return {
+        reply: isEn
+          ? "Here are our official approximate USD prices with Dr. Víctor Estrella. All our packages include full medical expenses (pre-op lab work, medical insurance, anesthesia, hospital fees, and clinical follow-up):\n\n• **Lipo 360 + BBL**: ~$5,100 USD (Includes $1,100 medical expenses)\n• **Tummy Tuck + Lipo 360 + BBL**: ~$7,100 USD\n• **Mommy Makeover with Implants**: ~$9,200 USD\n• **Breast Augmentation with Implants**: ~$6,200 USD\n• **Breast Lift without Implants**: ~$5,200 USD\n\n*Note: VASER ultrasound technology add-on is $800 USD. Would you like to complete a quick candidacy evaluation or book a virtual consultation?"
+          : "Con gusto te comparto los precios aproximados oficiales en USD con el Dr. Víctor Estrella. Todos nuestros paquetes incluyen gastos médicos completos (analíticas de laboratorio, seguro médico, anestesia, quirófano en centro acreditado y seguimiento postoperatorio):\n\n• **Lipo 360 + BBL**: ~$5,100 USD (Incluye $1,100 de gastos médicos)\n• **Abdominoplastia + Lipo 360 + BBL**: ~$7,100 USD\n• **Mommy Makeover con Implantes**: ~$9,200 USD\n• **Senos con Implantes (Aumento)**: ~$6,200 USD\n• **Levantamiento de Senos sin Implantes**: ~$5,200 USD\n\n*Nota: La tecnología ultrasónica VASER tiene un suplemento de $800 USD. ¿Te gustaría realizar una evaluación estética de tu caso o agendar una consulta virtual?",
+        suggestedProcedures: ["lipo_bbl", "abdominoplastia_lipo360_bbl", "mommy_makeover_implantes", "senos_con_implantes"],
+        bookingIntent: false
+      };
+    }
+
+    // 3. Mommy Makeover / Post-pregnancy / Tummy Tuck
+    if (
+      text.includes('mommy') ||
+      text.includes('tummy') ||
+      text.includes('abdominoplastia') ||
+      text.includes('hijos') ||
+      text.includes('embarazo') ||
+      text.includes('cesarea') ||
+      text.includes('cesárea') ||
+      text.includes('piel suelta') ||
+      text.includes('flacidez')
+    ) {
+      return {
+        reply: isEn
+          ? "For post-pregnancy rejuvenation or loose abdominal skin, Dr. Estrella highly recommends the **Mommy Makeover** or **Tummy Tuck (Abdominoplasty) + Lipo 360 + BBL**.\n\nThis procedure repairs muscle separation (diastasis recti), removes stretched skin, and contours the waistline with BBL. If desired, breast lifting or implants can be included in the same surgical session.\n\nEstimated recovery: 12-14 days in Santo Domingo. Would you like to check available consultation dates?"
+          : "Para corregir los cambios post-embarazo o exceso de piel abdominal, el procedimiento por excelencia con el Dr. Estrella es el **Mommy Makeover** o la **Abdominoplastia + Lipo 360 + BBL**.\n\nEste procedimiento repara la separación muscular (diástasis de rectos), elimina la piel flácida y redefine la cintura con lipotransferencia glútea. Si lo deseas, se puede incluir el levantamiento o aumento de senos en el mismo tiempo quirúrgico.\n\nEstancia recomendada en Santo Domingo: 12 a 14 días. ¿Deseas verificar fechas disponibles para tu consulta virtual?",
+        suggestedProcedures: ["mommy_makeover_implantes", "abdominoplastia_lipo360_bbl", "senos_con_implantes"],
+        bookingIntent: false
+      };
+    }
+
+    // 4. Lipo 360 / BBL / Fat contouring
+    if (
+      text.includes('lipo') ||
+      text.includes('bbl') ||
+      text.includes('grasa') ||
+      text.includes('cintura') ||
+      text.includes('gluteo') ||
+      text.includes('glúteo') ||
+      text.includes('fat')
+    ) {
+      return {
+        reply: isEn
+          ? "Dr. Víctor Estrella is a recognized specialist in **Lipo 360 HD with Brazilian Butt Lift (BBL)**. Using advanced fat-grafting techniques and ultrasonic VASER technology, he sculpts the waistline and transfers purified fat cells to the gluteal area for natural, long-lasting curves without artificial implants.\n\n• **Total Approximate Cost**: ~$5,100 USD (Includes $1,100 medical expenses)\n• **Medical Stay**: 10-12 days in the Dominican Republic.\n\nWould you like to evaluate your BMI and candidacy for this procedure?"
+          : "El Dr. Víctor Estrella es reconocido por su técnica en **Lipoescultura 360 HD con BBL**. Mediante tecnología ultrasónica VASER y lipotransferencia de grasa autóloga purificada, logra una marcación anatómica de cintura y realce de glúteos con proporciones armónicas y naturales.\n\n• **Costo Estimado Total**: ~$5,100 USD (Incluye $1,100 de gastos médicos completos)\n• **Estancia en Santo Domingo**: 10 a 12 días para drenajes y controles.\n\n¿Deseas evaluar tu IMC y confirmar si eres candidata ideal?",
+        suggestedProcedures: ["lipo_bbl", "abdominoplastia_lipo360_bbl"],
+        bookingIntent: false
+      };
+    }
+
+    // 5. Breasts / Senos
+    if (
+      text.includes('seno') ||
+      text.includes('busto') ||
+      text.includes('pecho') ||
+      text.includes('implante') ||
+      text.includes('breast') ||
+      text.includes('mastopexia') ||
+      text.includes('reduccion') ||
+      text.includes('reducción')
+    ) {
+      return {
+        reply: isEn
+          ? "For breast aesthetics, Dr. Estrella offers three customized options:\n\n1. **Breast Augmentation with Implants** (~$6,200 USD total) - Restores volume, upper-pole fullness, and projection.\n2. **Breast Lift without Implants (Mastopexy)** (~$5,200 USD total) - Corrects sagging and repositions the areola using your own glandular tissue.\n3. **Breast Reduction** (~$5,700 USD total) - Relieves physical weight and reshapes the breasts proportionally.\n\nWhich of these best matches your personal goals?"
+          : "En cirugía estética de mamas, el Dr. Víctor Estrella ofrece tres alternativas según tus necesidades anatómicas:\n\n1. **Aumento de Senos con Implantes** (~$6,200 USD total) - Restaura proyección, volumen y escote con implantes de última generación.\n2. **Levantamiento de Senos sin Implantes (Mastopexia)** (~$5,200 USD total) - Corrige la caída y reposiciona el complejo areola-pezón con tu propio tejido.\n3. **Reducción Mamaria** (~$5,700 USD total) - Alivia el peso en la espalda y esculpe un busto erguido y cómodo.\n\n¿Cuál de estas alternativas se ajusta mejor a tu objetivo?",
+        suggestedProcedures: ["senos_con_implantes", "levantamiento_senos_sin_implantes", "reduccion_mamaria"],
+        bookingIntent: false
+      };
+    }
+
+    // 6. Travel / Recovery / Dominican Republic
+    if (
+      text.includes('viaj') ||
+      text.includes('travel') ||
+      text.includes('republica dominicana') ||
+      text.includes('dominican') ||
+      text.includes('recuperacion') ||
+      text.includes('recuperación') ||
+      text.includes('recovery') ||
+      text.includes('estancia') ||
+      text.includes('dias') ||
+      text.includes('días')
+    ) {
+      return {
+        reply: isEn
+          ? "Travelling to Santo Domingo for surgery with Dr. Víctor Estrella is smooth and completely guided! Over 60% of our patients travel from the United States, Puerto Rico, and Europe.\n\n• **Recommended Stay**: 10 to 14 days in Santo Domingo.\n• **Pre-op Day**: In-person consultation, 3D Vectra simulation, and final blood tests.\n• **Post-op Care**: Mandatory lymphatic drainage massages included, medical checkups, and final travel clearance before flying back.\n• **Accommodation**: We partner with certified recovery homes featuring specialized post-op nursing care.\n\nWould you like to schedule your initial virtual consultation to discuss your travel timeline?"
+          : "Viajar a Santo Domingo para tu procedimiento con el Dr. Víctor Estrella es una experiencia segura y guiada paso a paso. Más del 60% de nuestras pacientes viajan desde Estados Unidos, Puerto Rico, Europa y las islas del Caribe.\n\n• **Tiempo de Estancia**: 10 a 14 días en Santo Domingo.\n• **Día Preoperatorio**: Consulta presencial, analíticas finales y simulación 3D.\n• **Cuidados Postoperatorios**: Drenajes linfáticos especializados, retiro de drenos y autorización médica formal de vuelo.\n• **Alojamiento**: Contamos con convenios con casas de recuperación certificadas con enfermería 24/7.\n\n¿Deseas agendar tu consulta virtual de valoración para coordinar fechas de viaje?",
+        suggestedProcedures: ["lipo_bbl", "abdominoplastia_lipo360_bbl", "mommy_makeover_implantes"],
+        bookingIntent: false
+      };
+    }
+
+    // Default welcoming response
+    return {
+      reply: isEn
+        ? "Hello! I am Aura, Senior Clinical Aesthetic Assistant to Dr. Víctor Estrella, Board-Certified Plastic Surgeon in Santo Domingo.\n\nI can help you:\n1. **Evaluate your surgical candidacy** based on your anatomical goals.\n2. **Explore procedures and official USD pricing** (including pre-op tests & medical expenses).\n3. **Plan travel & recovery** in the Dominican Republic.\n4. **Schedule a Virtual or In-Person Consultation** directly with Dr. Estrella.\n\nWhat procedure or aesthetic area would you like to discuss today?"
+        : "¡Hola! Soy Aura, Asistente Clínica Virtual del Dr. Víctor Estrella, Cirujano Plástico y Reconstructivo certificado (SODOCIPRE) en Santo Domingo.\n\nEstoy aquí para ayudarte a:\n1. **Evaluar tu candidatura quirúrgica** según tus metas corporales o faciales.\n2. **Conocer precios oficiales en USD** con desglose completo de gastos médicos.\n3. **Coordinar viaje y recuperación** si visitas República Dominicana desde el exterior.\n4. **Agendar tu Consulta Médica** (Virtual o Presencial) con el Dr. Estrella.\n\n¿Qué área o procedimiento te gustaría transformar?",
+      suggestedProcedures: ["lipo_bbl", "abdominoplastia_lipo360_bbl", "mommy_makeover_implantes"],
+      bookingIntent: false
+    };
+  }
+
+  // API Endpoint: Intelligent Chatbot with Gemini and Fallback
+  app.post("/api/chat", async (req, res) => {
+    try {
+      const { messages = [], lang = "es", leadContext = {} } = req.body;
+      const isSpanish = lang === "es";
+
+      // Extract last user message
+      const lastUserMsg = [...messages].reverse().find((m: any) => m.role === "user");
+      const userQuery = lastUserMsg ? lastUserMsg.content : "";
+
+      const ai = getGenAI();
+
+      if (!ai) {
+        console.log("[Clinical Server] GEMINI_API_KEY not configured. Utilizing clinical heuristic conversational engine.");
+        const fallback = generateHeuristicResponse(userQuery, lang);
+        return res.status(200).json({
+          success: true,
+          model: "clinical-heuristic-engine",
+          reply: fallback.reply,
+          suggestedProcedures: fallback.suggestedProcedures,
+          bookingIntent: fallback.bookingIntent,
+          evaluation: null
+        });
+      }
+
+      // System instruction for Gemini model
+      const systemInstruction = `
+You are "Aura", the empathetic, prestigious, and knowledgeable Senior Clinical Aesthetic Consultation AI for Dr. Víctor Estrella, MD.
+Dr. Víctor Estrella is a Board-Certified Plastic, Reconstructive & Aesthetic Surgeon located in Santo Domingo, Dominican Republic.
+He is a certified active member of SODOCIPRE (Sociedad Dominicana de Cirugía Plástica, Reconstructiva y Estética).
+His clinic specializes in natural-looking transformations, High-Definition Liposculpture (Lipo 360 HD with VASER), BBL, Abdominoplasty (Tummy Tuck), Mommy Makeover, Breast Aesthetics (Augmentation, Lift, Reduction), and Facial Surgery.
+
+OFFICIAL CLINICAL PROCEDURES & ESTIMATED USD PRICING (All packages include full medical expenses: blood tests, medical insurance, anesthesia, operating theater, clinical follow-up):
+- Liposucción 360 + BBL (Transferencia Glútea): $5,100 USD (Includes $1,100 medical expenses). Downtime: 10-12 days in DR.
+- Abdominoplastia (Tummy Tuck) + Liposucción 360 + BBL: $7,100 USD (Includes $1,100 medical expenses). Downtime: 12-14 days in DR.
+- Mommy Makeover con Implantes (Tummy Tuck + Lipo 360 + BBL + Senos con Implantes): $9,200 USD (Includes $1,200 medical expenses). Downtime: 14 days in DR.
+- Mommy Makeover sin Implantes (Tummy Tuck + Lipo 360 + BBL + Levantamiento de Senos): $10,100 USD. Downtime: 14 days in DR.
+- Senos con Implantes (Aumento Mamario): $6,200 USD (Includes $1,200 medical expenses). Downtime: 7-10 days in DR.
+- Levantamiento de Senos sin Implantes (Mastopexia): $5,200 USD. Downtime: 8-10 days in DR.
+- Reducción Mamaria: $5,700 USD. Downtime: 8-12 days in DR.
+- Liposucción + Senos con Implantes: $7,700 USD.
+- Liposucción + Senos sin Implantes: $8,200 USD.
+- Arm Lift (Braquioplastia): $5,100 USD.
+- Cruroplastia (Muslos Internos): $5,600 USD.
+- Reparación de Ombligo: $1,000 USD.
+- VASER Ultrasound Technology Add-on: +$800 USD (recommended for high definition or previous liposuction cases).
+- High Complexity Protocol (BMI > 35): +$800 USD.
+
+GUIDELINES FOR CONVERSING WITH LEADS:
+1. Tone: Warm, empathetic, professional, transparent, and prioritizing patient safety above all.
+2. Language: Reply in the language of the user (Spanish by default if in Spanish, English if in English).
+3. Evaluation: If the lead describes loose skin or asks what they need, evaluate their candidacy: explain whether they need a Tummy Tuck (for loose skin and diastasis) vs Lipo 360 (for stubborn fat with good elasticity).
+4. Traveling patients: Explain that patients from the US, Puerto Rico, Canada, and Europe stay 10-14 days in Santo Domingo.
+5. Appointment booking: Offer to schedule a Virtual Consultation via WhatsApp/Zoom or an In-Person Consultation at Dr. Estrella's clinic.
+6. At the very end of your response, ALWAYS output a structured JSON block inside <<<JSON_METADATA>>>...<<<END_JSON_METADATA>>> with this exact schema:
+<<<JSON_METADATA>>>
+{
+  "suggestedProcedures": ["lipo_bbl", "abdominoplastia_lipo360_bbl"],
+  "bookingIntent": false,
+  "evaluation": null
+}
+<<<END_JSON_METADATA>>>
+(Use actual procedure IDs from the list: lipo_bbl, abdominoplastia_lipo360_bbl, mommy_makeover_implantes, mommy_makeover_sin_implantes, senos_con_implantes, levantamiento_senos_sin_implantes, reduccion_mamaria, lipo_senos_implantes, lipo_senos_sin_implantes, arm_lift, cruroplastia, reparacion_ombligo. Set bookingIntent to true if the user wants to book or pick a date).
+`;
+
+      // Build conversation contents for generateContent
+      const contents = messages.map((m: any) => ({
+        role: m.role === "assistant" ? "model" : "user",
+        parts: [{ text: m.content }]
+      }));
+
+      // If lead context is present, inject it
+      if (leadContext && Object.keys(leadContext).length > 0) {
+        contents.unshift({
+          role: "user",
+          parts: [{ text: `Lead Context: ${JSON.stringify(leadContext)}` }]
+        });
+        contents.splice(1, 0, {
+          role: "model",
+          parts: [{ text: "Understood. I will personalize my clinical recommendations with this lead context." }]
+        });
+      }
+
+      console.log(`[Clinical Server] Calling Gemini API (gemini-3.6-flash) for user chat...`);
+      const response = await ai.models.generateContent({
+        model: "gemini-3.6-flash",
+        contents: contents,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.7,
+        }
+      });
+
+      const fullOutput = response.text || "";
+
+      // Parse metadata block
+      let visibleReply = fullOutput;
+      let suggestedProcedures: string[] = [];
+      let bookingIntent = false;
+      let evaluation = null;
+
+      const metaMatch = fullOutput.match(/<<<JSON_METADATA>>>([\s\S]*?)<<<END_JSON_METADATA>>>/);
+      if (metaMatch) {
+        try {
+          const parsed = JSON.parse(metaMatch[1].trim());
+          suggestedProcedures = parsed.suggestedProcedures || [];
+          bookingIntent = Boolean(parsed.bookingIntent);
+          evaluation = parsed.evaluation || null;
+          visibleReply = fullOutput.replace(metaMatch[0], "").trim();
+        } catch (jsonErr) {
+          console.warn("[Clinical Server] Failed to parse JSON metadata from Gemini response:", jsonErr);
+        }
+      }
+
+      // If no suggested procedures detected, provide reasonable defaults based on content
+      if (!suggestedProcedures || suggestedProcedures.length === 0) {
+        const lower = visibleReply.toLowerCase();
+        if (lower.includes("mommy") || lower.includes("tummy") || lower.includes("abdomino")) {
+          suggestedProcedures = ["mommy_makeover_implantes", "abdominoplastia_lipo360_bbl"];
+        } else if (lower.includes("seno") || lower.includes("breast") || lower.includes("implante")) {
+          suggestedProcedures = ["senos_con_implantes", "levantamiento_senos_sin_implantes"];
+        } else {
+          suggestedProcedures = ["lipo_bbl", "abdominoplastia_lipo360_bbl"];
+        }
+      }
+
+      return res.status(200).json({
+        success: true,
+        model: "gemini-3.8-flash",
+        reply: visibleReply,
+        suggestedProcedures,
+        bookingIntent,
+        evaluation
+      });
+    } catch (err: any) {
+      console.error("[Clinical Server] Gemini API chat error, falling back to heuristic engine:", err.message);
+      const fallback = generateHeuristicResponse(req.body?.messages?.[req.body.messages.length - 1]?.content || "", req.body?.lang || "es");
+      return res.status(200).json({
+        success: true,
+        model: "clinical-heuristic-engine-fallback",
+        reply: fallback.reply,
+        suggestedProcedures: fallback.suggestedProcedures,
+        bookingIntent: fallback.bookingIntent,
+        evaluation: null,
+        apiError: err.message
+      });
+    }
+  });
+
+  // API Endpoint: Instant Aesthetic Candidacy Evaluation for Leads
+  app.post("/api/chat/evaluate", (req, res) => {
+    try {
+      const {
+        zone = "body",
+        goals = [],
+        priorSurgery = "none",
+        children = 0,
+        heightCm = 165,
+        weightKg = 68,
+        timeline = "1-3_months",
+        travel = true,
+        lang = "es"
+      } = req.body;
+
+      const isEn = lang === "en";
+
+      // Calculate BMI
+      const heightM = (heightCm || 165) / 100;
+      const weight = weightKg || 68;
+      const bmi = parseFloat((weight / (heightM * heightM)).toFixed(1));
+
+      let candidateLevel: 'ideal' | 'good' | 'requires_clearance' = 'good';
+      if (bmi >= 19 && bmi <= 29) {
+        candidateLevel = 'ideal';
+      } else if (bmi > 29 && bmi <= 34.9) {
+        candidateLevel = 'good';
+      } else {
+        candidateLevel = 'requires_clearance';
+      }
+
+      let recommendedProcedureIds: string[] = [];
+      let rationale = "";
+      let recoveryDays = 12;
+
+      if (zone === "mommy" || children > 0 || goals.includes("loose_skin_abdomen")) {
+        recommendedProcedureIds = ["mommy_makeover_implantes", "abdominoplastia_lipo360_bbl"];
+        recoveryDays = 14;
+        rationale = isEn
+          ? "Based on previous pregnancies or skin laxity, a combined Abdominoplasty with Lipo 360 & BBL (or Mommy Makeover) is recommended to tighten the rectus diastasis and restore full contour harmony."
+          : "Debido a antecedentes de embarazos o flacidez en la pared abdominal, el procedimiento recomendado es Abdominoplastia con Lipo 360 & BBL (o Mommy Makeover), reparando la diástasis muscular y devolviendo firmeza a la cintura.";
+      } else if (zone === "breast" || goals.includes("breast_volume") || goals.includes("breast_lift")) {
+        recommendedProcedureIds = ["senos_con_implantes", "levantamiento_senos_sin_implantes"];
+        recoveryDays = 10;
+        rationale = isEn
+          ? "You are an excellent candidate for tailored breast aesthetics. A mastopexy or augmentation with high-cohesive silicone implants will restore volume and symmetry."
+          : "Presentas excelente candidatura para estética mamaria personalizada. Una mastopexia o aumento con prótesis de alta cohesividad restaurará volumen, proyección y simetría.";
+      } else if (zone === "arms" || goals.includes("arm_flaccidity")) {
+        recommendedProcedureIds = ["arm_lift", "lipo_bbl"];
+        recoveryDays = 10;
+        rationale = isEn
+          ? "Brachioplasty combined with contouring will remove excess skin in the upper arms for firm, defined silhouettes."
+          : "La braquioplastia combinada con contorno corporal eliminará el descolgamiento en brazos otorgando una apariencia estilizada.";
+      } else {
+        // Default body contouring
+        recommendedProcedureIds = ["lipo_bbl", "abdominoplastia_lipo360_bbl"];
+        recoveryDays = 12;
+        rationale = isEn
+          ? "High-Definition Lipo 360 with BBL is the premier choice to selectively sculpt abdominal contours and enhance natural curves."
+          : "La Lipoescultura 360 HD con BBL es el procedimiento ideal para esculpir la cintura y lograr curvas armónicas de aspecto atlético y natural.";
+      }
+
+      const travelNotes = travel
+        ? (isEn 
+            ? "Recommended stay in Santo Domingo: 10 to 14 days. Pre-op labs on day 1, post-op lymphatic massages days 3 to 10." 
+            : "Estancia recomendada en Santo Domingo: 10 a 14 días. Analíticas preoperatorias el día 1 y masajes de drenaje linfático entre los días 3 y 10.")
+        : (isEn 
+            ? "Local patient protocol: 2-3 weeks before returning to full physical exercise." 
+            : "Protocolo para paciente local: 2 a 3 semanas de reposo relativo antes de reiniciar actividades físicas intensas.");
+
+      return res.status(200).json({
+        success: true,
+        evaluation: {
+          zone,
+          goals,
+          candidateLevel,
+          bmi,
+          recommendedProcedureIds,
+          recoveryDays,
+          travelNotes,
+          rationale
+        }
+      });
+    } catch (err: any) {
+      console.error("[Clinical Server] Error in /api/chat/evaluate:", err);
+      return res.status(500).json({
+        success: false,
+        error: err.message
+      });
+    }
+  });
+
   // Resolve production static files directory reliably across Docker/Hostinger/Node environments
   function getDistDirectory(): string {
     const candidatePaths = [
@@ -1471,26 +2003,41 @@ Number of Attached Photos: ${attachments.length}
   }
 
   // Serve Vite assets in development, or compiled production assets in production
-  if (process.env.NODE_ENV !== "production") {
+  const distPath = getDistDirectory();
+  const hasDistIndex = fs.existsSync(path.join(distPath, "index.html"));
+  const isProduction = process.env.NODE_ENV === "production" || (hasDistIndex && process.env.NODE_ENV !== "development");
+
+  if (!isProduction) {
     const vite = await createViteServer({
       server: { 
         middlewareMode: true,
-        allowedHosts: ["crm.drestrellaplasticsurgeon.com"], 
+        allowedHosts: ["drestrellaplasticsurgeon.com", "crm.drestrellaplasticsurgeon.com"], 
       },
       appType: "spa"
     });
     app.use(vite.middlewares);
   } else {
-    // Serve production static assets
-    const distPath = getDistDirectory();
+    // Serve production static assets with aggressive caching on hashed static assets
     console.log(`[Clinical Server] Serving static production assets from: ${distPath}`);
     
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, {
+      maxAge: "1d",
+      setHeaders: (res, filePath) => {
+        if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          // Hashed Vite assets are immutable
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        } else if (filePath.endsWith(".html")) {
+          // Entry point HTML must revalidate
+          res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
+        }
+      }
+    }));
 
     // Handle root / and client-side routes
-    app.get("*", (req, res) => {
+    app.get("*", (_req, res) => {
       const indexPath = path.join(distPath, "index.html");
       if (fs.existsSync(indexPath)) {
+        res.setHeader("Cache-Control", "public, max-age=0, must-revalidate");
         return res.sendFile(indexPath);
       }
       return res.status(200).send(`<!DOCTYPE html>
